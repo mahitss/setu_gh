@@ -105,10 +105,51 @@ def pulse_rows(db: Session) -> list[dict]:
                                                  CitizenSignal.created_at >= prev_start,
                                                  CitizenSignal.created_at < cur_start).scalar() or 0
         tp = trend_percent(recent, previous)
+        if tp is None:
+            status = "insufficient_data"
+        elif tp > 5:
+            status = "rising"
+        elif tp < -5:
+            status = "declining"
+        else:
+            status = "stable"
         out.append({"category": cat, "current_count": recent, "previous_count": previous,
-                    "trend_percent": tp, "status": "ok" if tp is not None else "insufficient_data",
+                    "trend_percent": tp, "status": status,
                     "recent_30d": recent, "prior": previous, "growth_pct": tp})
     return sorted(out, key=lambda x: (x["trend_percent"] is not None, x["trend_percent"] or 0), reverse=True)
+
+
+def emerging_hotspots(db: Session, min_recent: int = 10, limit: int = 5) -> list[dict]:
+    """District-level risers: highest trend_percent with enough recent signals."""
+    now = datetime.utcnow()
+    cur_start = now - timedelta(days=30)
+    prev_start = now - timedelta(days=60)
+    groups = (db.query(CitizenSignal.state, CitizenSignal.district, CitizenSignal.category).distinct().all())
+    out = []
+    for state, district, cat in groups:
+        recent = db.query(func.count()).filter(
+            CitizenSignal.state == state, CitizenSignal.district == district,
+            CitizenSignal.category == cat, CitizenSignal.created_at >= cur_start).scalar() or 0
+        if recent < min_recent:
+            continue
+        previous = db.query(func.count()).filter(
+            CitizenSignal.state == state, CitizenSignal.district == district,
+            CitizenSignal.category == cat, CitizenSignal.created_at >= prev_start,
+            CitizenSignal.created_at < cur_start).scalar() or 0
+        tp = trend_percent(recent, previous)
+        if tp is None:
+            continue
+        out.append({"id": hotspot_id(state, district, cat), "state": state, "district": district,
+                    "category": cat, "current_count": recent, "previous_count": previous,
+                    "trend_percent": tp})
+    return sorted(out, key=lambda x: x["trend_percent"], reverse=True)[:limit]
+
+
+def civic_pulse(db: Session) -> dict:
+    signals = pulse_rows(db)
+    return {"period": {"current_days": 30, "previous_days": 30},
+            "signals": signals, "pulse": signals,
+            "emerging_hotspots": emerging_hotspots(db)}
 
 
 def top_categories(db: Session, limit: int = 5) -> list[dict]:

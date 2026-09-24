@@ -212,6 +212,23 @@ def test_voice_mocked_transcript(monkeypatch):
     assert r2.json()["signal"]["category"] == "water"
 
 
+def test_voice_rejects_bad_mime_and_language():
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.txt", b"hello", "text/plain")})
+    assert r.status_code == 400
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.webm", b"\x00" * 10, "audio/webm")},
+                    data={"language_code": "xx-XX"})
+    assert r.status_code == 400
+
+
+def test_voice_dev_mode_no_audio_url(monkeypatch):
+    import app.routers.voice as voice_mod
+    monkeypatch.delenv("GCS_BUCKET", raising=False)
+    monkeypatch.setattr(voice_mod, "_transcribe", lambda audio, lang: "पानी नहीं आ रहा है")
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.webm", b"\x00" * 100, "audio/webm")})
+    assert r.status_code == 200
+    assert r.json()["audio_url"] is None and "transcript" in r.json()
+
+
 # --- Natural-language policy query (allowlisted) ---
 
 def test_policy_query_filters():
@@ -351,3 +368,84 @@ def test_nl_policy_query():
     assert body["filters"]["max_investment_cr"] == 30.0
     assert all(m["category"] == "healthcare" for m in body["matches"])
     assert client.post("/api/v1/policy-query/nl", json={"question": "hi"}).status_code == 422
+
+
+# --- Phase 9: recommendation engine ---
+
+def test_recommendation_engine_deterministic():
+    from app.services.recommendation_engine import build_recommendation
+    row = {"signals": 8421, "population": 183000, "gap_index": 0.81, "trend_pct": 34,
+           "investment_inr": 120000000, "priority_score": 0.86,
+           "factors": {"demand_index": 0.9, "infra_gap": 0.81, "pop_impact": 0.8,
+                       "invest_gap": 0.7, "trend": 0.9}}
+    a = build_recommendation("UP", "Lucknow", "healthcare", row)
+    b = build_recommendation("UP", "Lucknow", "healthcare", row)
+    assert a == b
+    assert a["intervention"] == "Improve primary healthcare access and emergency transport"
+    assert a["evidence"] == {"citizen_signals": 8421, "population_affected": 183000,
+                             "infrastructure_gap": 0.81, "demand_trend": 34,
+                             "existing_investment": 120000000}
+    assert len(a["reasoning"]) >= 4 and "guarantee" in a["confidence_label"]
+
+
+def test_hotspot_recommendation_endpoint():
+    h = client.get("/api/v1/hotspots").json()["hotspots"][0]
+    r = client.get(f"/api/v1/hotspots/{h['id']}/recommendation")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["evidence"]["citizen_signals"] == h["signals"]
+    assert body["evidence"]["population_affected"] == h["population"]
+    assert "intervention" in body["recommendation"] and "confidence" in body["recommendation"]
+    assert set(["summary", "evidence_points", "caveats"]) <= set(body["explanation"])
+    assert client.get("/api/v1/hotspots/!!!/recommendation").status_code == 404
+
+
+def test_structured_explanation_fallback_without_key(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    from app.services.gemini import explain_structured
+    out, source = explain_structured({"citizen_signals": 10, "population": 5,
+                                      "infrastructure_gap": 0.5, "trend": None, "investment": 0})
+    assert source == "template" and len(out["evidence_points"]) >= 3 and len(out["caveats"]) >= 1
+
+
+def test_structured_explanation_validates_gemini_output(monkeypatch):
+    import json as _json
+    import google.generativeai as genai
+
+    class _Resp:
+        text = "not json"
+
+    class _FakeModel:
+        def __init__(self, *a, **k):
+            pass
+
+        def generate_content(self, *a, **k):
+            return _Resp()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(genai, "GenerativeModel", _FakeModel)
+    from app.services.gemini import explain_structured
+    out, source = explain_structured({"citizen_signals": 10})
+    assert source == "template" and "summary" in out
+
+
+# --- Phase 11: pulse intelligence ---
+
+def test_pulse_status_and_period():
+    body = client.get("/api/v1/civic-pulse").json()
+    assert body["period"] == {"current_days": 30, "previous_days": 30}
+    assert set(body.keys()) >= {"period", "signals", "pulse", "emerging_hotspots"}
+    for p in body["signals"]:
+        assert p["status"] in ("rising", "stable", "declining", "insufficient_data")
+        if p["status"] == "insufficient_data":
+            assert p["trend_percent"] is None
+
+
+def test_emerging_hotspots_shape():
+    em = client.get("/api/v1/civic-pulse").json()["emerging_hotspots"]
+    assert len(em) > 0
+    for e in em:
+        assert set(["id", "district", "category", "trend_percent"]) <= set(e)
+        assert e["trend_percent"] is not None
+    trends = [e["trend_percent"] for e in em]
+    assert trends == sorted(trends, reverse=True)

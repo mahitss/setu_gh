@@ -189,3 +189,62 @@ def explain_recommendation(state: str, district: str, category: str, evidence: d
     except Exception as e:
         log.warning("Gemini explanation failed, using template: %s", e)
         return template, "template"
+
+
+class StructuredExplanation(BaseModel):
+    summary: str = Field(min_length=1, max_length=600)
+    evidence_points: list[str] = Field(min_length=1, max_length=8)
+    caveats: list[str] = Field(min_length=1, max_length=8)
+
+
+EXPLAIN_INSTRUCTION = (
+    "You are explaining a civic infrastructure analysis. "
+    "Explain why this area was flagged using ONLY the supplied evidence. "
+    "Do not invent statistics. Do not introduce new facts. Do not claim certainty. "
+    "Do not recommend spending a specific amount unless that amount is provided. "
+    "Clearly distinguish observed evidence from the prototype's recommendation. "
+    "Reply JSON only with keys: summary, evidence_points (list), caveats (list).")
+
+
+def _template_explanation(evidence: dict) -> dict:
+    pts = [
+        f"{evidence.get('citizen_signals')} citizen signals recorded",
+        f"{evidence.get('population')} people in the affected area",
+        f"Infrastructure gap index {evidence.get('infrastructure_gap')}",
+    ]
+    trend = evidence.get("trend")
+    pts.append("Demand history still building" if trend is None
+               else f"Demand trend {trend:+}% over the comparison window")
+    return {
+        "summary": "Prototype analysis flags this area from observed demand and coverage evidence.",
+        "evidence_points": pts,
+        "caveats": [
+            "Demo/synthetic input data — not official statistics.",
+            "Scores come from a prototype prioritization model.",
+        ],
+    }
+
+
+def explain_structured(evidence: dict) -> tuple[dict, str]:
+    """Structured {summary, evidence_points[], caveats[]} explanation.
+
+    Gemini receives ONLY the evidence dict. Output is Pydantic-validated;
+    any failure falls back to the deterministic template.
+    """
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if api_key:
+        try:
+            import google.generativeai as genai
+
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(
+                os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+                system_instruction=EXPLAIN_INSTRUCTION)
+            resp = model.generate_content(
+                f"Evidence: {json.dumps(evidence)}",
+                generation_config={"response_mime_type": "application/json"})
+            data = StructuredExplanation(**json.loads(resp.text.strip().strip("`").replace("json\n", "")))
+            return data.model_dump(), "gemini"
+        except Exception as e:
+            log.warning("Gemini structured explanation failed, using template: %s", e)
+    return _template_explanation(evidence), "template"

@@ -10,9 +10,10 @@ from ..database import get_db
 from ..models import CitizenSignal, Demographic, Infrastructure, Investment, Recommendation
 from ..schemas import NLQueryIn, PolicyQueryFilters, SimulateIn
 from ..services.engine import simulate
-from ..services.gemini import explain_recommendation
+from ..services.gemini import explain_recommendation, explain_structured
+from ..services.recommendation_engine import build_recommendation
 from ..services.hotspot_engine import (
-    MODEL_NOTE, hotspot_id, hotspot_rows, parse_hotspot_id, pulse_rows, top_categories,
+    MODEL_NOTE, civic_pulse, hotspot_id, hotspot_rows, parse_hotspot_id, top_categories,
 )
 from ..services.nl_query import parse_question
 
@@ -80,6 +81,7 @@ def _detail(state: str, district: str, category: str, db: Session) -> dict:
                 "gap_index": r["gap_index"], "investment_inr": r["investment_inr"],
                 "factors": r["factors"]}
     rec_text, rec_source = explain_recommendation(state, district, category, evidence)
+    structured = build_recommendation(state, district, category, r)
     return {
         "location": {"state": state, "district": district},
         "category": category,
@@ -96,6 +98,7 @@ def _detail(state: str, district: str, category: str, db: Session) -> dict:
         "hotspot": r,
         "evidence": evidence,
         "recommendation": rec_text,
+        "recommendation_structured": structured,
         "explanation_source": rec_source,
         "note": "Prototype priority analysis. Metrics deterministic; wording explanatory.",
     }
@@ -123,9 +126,35 @@ def hotspot_by_short_id(hotspot_id: str, db: Session = Depends(get_db)):
     return _detail(*parsed, db)
 
 
+@router.get("/hotspots/{hotspot_id}/recommendation")
+def hotspot_recommendation(hotspot_id: str, db: Session = Depends(get_db)):
+    """Deterministic recommendation + evidence; Gemini explains only."""
+    parsed = parse_hotspot_id(hotspot_id)
+    if not parsed:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    state, district, category = parsed
+    rows = [r for r in hotspot_rows(db)
+            if r["state"] == state and r["district"] == district and r["category"] == category]
+    if not rows:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    structured = build_recommendation(state, district, category, rows[0])
+    explanation, source = explain_structured({
+        "category": category, "signal_count": structured["evidence"]["citizen_signals"],
+        "population": structured["evidence"]["population_affected"],
+        "infrastructure_gap": structured["evidence"]["infrastructure_gap"],
+        "trend": structured["evidence"]["demand_trend"],
+        "investment": structured["evidence"]["existing_investment"]})
+    return {"recommendation": {"intervention": structured["intervention"],
+                               "confidence": structured["confidence"],
+                               "confidence_label": structured["confidence_label"]},
+            "reasoning": structured["reasoning"],
+            "evidence": structured["evidence"],
+            "explanation": explanation, "explanation_source": source}
+
+
 @router.get("/civic-pulse")
 def pulse(db: Session = Depends(get_db)):
-    return {"pulse": pulse_rows(db)}
+    return civic_pulse(db)
 
 
 @router.get("/recommendations")
