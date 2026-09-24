@@ -1,8 +1,193 @@
+"use client";
+
+import { useState } from "react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+const STATE_DISTRICTS: Record<string, string[]> = {
+  "Uttar Pradesh": ["Lucknow", "Varanasi", "Kanpur Nagar", "Gorakhpur"],
+  Bihar: ["Patna", "Gaya", "Muzaffarpur", "Bhagalpur"],
+  Maharashtra: ["Mumbai Suburban", "Pune", "Nagpur", "Nashik"],
+  Karnataka: ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Kalaburagi"],
+  Rajasthan: ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+  "West Bengal": ["Kolkata", "Howrah", "Darjeeling", "Nadia"],
+};
+
+const LANGUAGE_NAMES: Record<string, string> = {
+  hi: "Hindi",
+  en: "English",
+  bn: "Bengali",
+  mr: "Marathi",
+  kn: "Kannada",
+};
+
+type Signal = {
+  id: number;
+  category: string;
+  sub_category: string | null;
+  severity: string;
+  summary: string | null;
+  language: string;
+  state: string | null;
+  district: string | null;
+};
+
+const title = (s: string) =>
+  s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
 export default function CitizenPage() {
+  const [text, setText] = useState("");
+  const [state, setState] = useState("Uttar Pradesh");
+  const [district, setDistrict] = useState("Lucknow");
+  const [locality, setLocality] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [signal, setSignal] = useState<Signal | null>(null);
+
+  async function submit() {
+    setError(null);
+    setSignal(null);
+    if (!text.trim()) {
+      setError("Please describe the issue before submitting.");
+      return;
+    }
+    setLoading(true);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 25000);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/citizen/signals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: text.trim(),
+          language: "auto",
+          state,
+          district,
+          locality: locality.trim() || null,
+        }),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const detail = Array.isArray(data?.detail)
+          ? data.detail[0]?.msg ?? "Invalid input."
+          : data?.detail ?? "Something went wrong.";
+        throw new Error(
+          res.status === 422
+            ? `Could not accept that input: ${detail}`
+            : "Could not save your request. Please try again."
+        );
+      }
+      const data = await res.json();
+      setSignal(data.signal);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") {
+        setError("The request timed out. Please check your connection and try again.");
+      } else if (e instanceof TypeError) {
+        setError("Cannot reach the server. Please make sure it is running and try again.");
+      } else if (e instanceof Error) {
+        setError(e.message);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } finally {
+      clearTimeout(timer);
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="text-3xl font-semibold">Tell us what your community needs.</h1>
-      <p className="mt-2 text-zinc-600">Text + voice submission lands in Phase 3/10. API ready at /api/v1/citizen/signals.</p>
+      <p className="mt-2 text-zinc-600">
+        Describe the issue in your own words, in any language.
+      </p>
+
+      <label className="mt-8 block text-sm font-medium" htmlFor="issue">
+        Describe the issue…
+      </label>
+      <textarea
+        id="issue"
+        className="mt-2 w-full rounded-md border p-3"
+        rows={5}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. हमारे गांव में अस्पताल बहुत दूर है…"
+        disabled={loading}
+      />
+
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium" htmlFor="state">State</label>
+          <select
+            id="state"
+            className="mt-2 w-full rounded-md border p-2"
+            value={state}
+            disabled={loading}
+            onChange={(e) => {
+              setState(e.target.value);
+              setDistrict(STATE_DISTRICTS[e.target.value][0]);
+            }}
+          >
+            {Object.keys(STATE_DISTRICTS).map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium" htmlFor="district">District</label>
+          <select
+            id="district"
+            className="mt-2 w-full rounded-md border p-2"
+            value={district}
+            disabled={loading}
+            onChange={(e) => setDistrict(e.target.value)}
+          >
+            {STATE_DISTRICTS[state].map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <label className="mt-4 block text-sm font-medium" htmlFor="locality">
+        Locality <span className="font-normal text-zinc-500">(optional)</span>
+      </label>
+      <input
+        id="locality"
+        className="mt-2 w-full rounded-md border p-2"
+        value={locality}
+        onChange={(e) => setLocality(e.target.value)}
+        placeholder="Village / ward"
+        disabled={loading}
+      />
+
+      <button
+        className="mt-6 rounded-md bg-black px-5 py-2.5 text-white disabled:opacity-50"
+        onClick={submit}
+        disabled={loading}
+      >
+        {loading ? "Submitting…" : "Submit Request"}
+      </button>
+
+      {error && (
+        <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-red-800">
+          {error}
+        </p>
+      )}
+
+      {signal && (
+        <section className="mt-6 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">Your request has been understood.</h2>
+          <dl className="mt-4 space-y-2 text-sm">
+            <div className="flex gap-2"><dt className="w-24 font-medium">Category</dt><dd>{title(signal.category)}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 font-medium">Issue</dt><dd>{signal.summary ?? title(signal.sub_category ?? signal.category)}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 font-medium">Severity</dt><dd>{title(signal.severity)}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 font-medium">Location</dt><dd>{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 font-medium">Language</dt><dd>{LANGUAGE_NAMES[signal.language] ?? signal.language}</dd></div>
+          </dl>
+        </section>
+      )}
     </main>
   );
 }
