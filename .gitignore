@@ -9,6 +9,8 @@ node_modules/
 .next/
 # Env / secrets
 .env
+.env.*
+!.env.example
 *.pem
 *.key
 # Data / local DB

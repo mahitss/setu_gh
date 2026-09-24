@@ -68,6 +68,8 @@ def test_valid_signal_returns_envelope():
     assert sig["language"] == "hi"
     assert sig["state"] == "Uttar Pradesh" and sig["district"] == "Lucknow"
     assert "api_key" not in json.dumps(body).lower()
+    # demo-fallback transparency: extraction source is exposed, never a secret
+    assert sig["extractor"] in ("gemini", "rule_fallback", "error_fallback")
 
 
 def test_raw_text_alias_still_accepted():

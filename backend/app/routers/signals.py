@@ -47,6 +47,7 @@ def create_signal(payload: SignalIn, db: Session = Depends(get_db)):
         db.rollback()
         log.exception("Database persistence failed")
         raise HTTPException(status_code=500, detail="Could not save your request. Please try again.")
+    sig.extractor = extracted.get("extractor", "unknown")  # transient, never persisted
     return {"success": True, "signal": sig}
 
 

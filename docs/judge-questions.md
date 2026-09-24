@@ -34,3 +34,22 @@
 12. **How could this extend beyond India?** Categories, weights, costs, and
     languages are config; the extract → validate → aggregate → explain pipeline
     is country-neutral (BRICS-ready design).
+
+13. **How do you validate citizen data?** Pydantic validation (non-empty,
+    ≤5000 chars), allowlisted categories/severities, server-side language and
+    location handling, audio MIME/size caps. Aggregation dilutes single bad rows.
+14. **How do you handle fake/spam submissions?** Honestly: 120/min per-IP rate
+    limit plus validation only. No ML spam filter yet — listed as future work;
+    hotspot aggregation means one fake report cannot move a priority score alone.
+15. **How is citizen privacy protected?** No accounts, no names/phones collected;
+    free-text locality only; request logs record method/path/timing, never bodies
+    or keys. A production pilot would need a formal data-governance review.
+16. **How does the investment simulator work?** Documented per-intervention
+    cost-per-person assumptions: reach = min(population, budget/cost),
+    coverage/gap lift proportional to unserved share. Always labelled estimate.
+17. **What data is real vs simulated?** Real: rows citizens submit live.
+    Simulated: the 10,500-row seed (`synthetic_demo`, in every aggregate
+    response). Estimates: simulator outputs. Never mixed without labels.
+18. **How could governments deploy this?** Cloud Run + Cloud SQL via the shipped
+    `cloudbuild.yaml`; swap seed for departmental extracts; validate scores with
+    officials; add auth, audit trail, and grievance-redressal linkage.

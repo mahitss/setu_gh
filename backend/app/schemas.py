@@ -41,6 +41,7 @@ class SignalOut(BaseModel):
     state: Optional[str] = None
     district: Optional[str] = None
     ai_confidence: float
+    extractor: str = "unknown"  # gemini | rule_fallback | error_fallback (demo transparency)
 
     class Config:
         from_attributes = True

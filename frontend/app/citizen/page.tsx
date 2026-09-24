@@ -23,6 +23,7 @@ type Signal = {
   language: string;
   state: string | null;
   district: string | null;
+  extractor?: string;
 };
 
 const title = (s: string) =>
@@ -263,6 +264,9 @@ export default function CitizenPage() {
             <div className="flex gap-2"><dt className="w-24 font-medium">Location</dt><dd>{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
             <div className="flex gap-2"><dt className="w-24 font-medium">Language</dt><dd>{LANGUAGE_NAMES[signal.language] ?? signal.language}</dd></div>
           </dl>
+          {signal.extractor && signal.extractor !== "gemini" && (
+            <p className="mt-3 text-xs text-zinc-500">Demo fallback — structured without a live AI call (live Gemini unavailable).</p>
+          )}
         </section>
       )}
     </main>
