@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from ..models import CitizenSignal, Infrastructure, Demographic, Investment
 
+DATA_SOURCE = "synthetic_demo"  # exposed in API responses; user submissions are "user_submitted"
+
 DISTRICTS = [
     # state, district, pop, lat, lon
     ("Uttar Pradesh", "Lucknow", 4985000, 26.85, 80.95),

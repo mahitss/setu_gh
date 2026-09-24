@@ -15,6 +15,7 @@ from ..services.recommendation_engine import build_recommendation
 from ..services.hotspot_engine import (
     MODEL_NOTE, civic_pulse, hotspot_id, hotspot_rows, parse_hotspot_id, top_categories,
 )
+from ..services.seed import DATA_SOURCE
 from ..services.simulation_engine import ASSUMPTIONS, INTERVENTIONS, LABEL, simulate_district
 from ..services.nl_query import parse_question
 
@@ -37,6 +38,7 @@ def summary(db: Session = Depends(get_db)):
             "active_hotspots": len([r for r in rows if r["priority_score"] >= 0.5]),
             "high_priority_areas": len([r for r in rows if r["priority_score"] >= 0.7]),
             "population_covered": pop, "population_affected": pop,
+            "data_source": DATA_SOURCE, "source_type": "synthetic",
             "top_categories": top_categories(db), "top_hotspots": rows[:10]}
 
 
@@ -64,7 +66,8 @@ def hotspots(
         rows = [r for r in rows if (r["state"], r["district"], r["category"]) in keys]
     if priority:
         rows = [r for r in rows if r["priority_level"] == priority]
-    return {"hotspots": rows[:limit], "count": len(rows)}
+    return {"hotspots": rows[:limit], "count": len(rows),
+            "data_source": DATA_SOURCE, "source_type": "synthetic"}
 
 
 def _detail(state: str, district: str, category: str, db: Session) -> dict:
@@ -155,7 +158,7 @@ def hotspot_recommendation(hotspot_id: str, db: Session = Depends(get_db)):
 
 @router.get("/civic-pulse")
 def pulse(db: Session = Depends(get_db)):
-    return civic_pulse(db)
+    return {**civic_pulse(db), "data_source": DATA_SOURCE, "source_type": "synthetic"}
 
 
 @router.get("/recommendations")

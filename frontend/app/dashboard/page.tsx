@@ -127,9 +127,9 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      <p className="text-sm font-medium text-zinc-500">JanSetu · Policymaker Intelligence</p>
-      <h1 className="mt-1 text-3xl font-semibold">Demand dashboard</h1>
-      <p className="mt-1 text-sm text-zinc-500">Synthetic demo data. Metrics computed deterministically.</p>
+      <p className="text-sm font-medium text-zinc-500">JanSetu · Civic Intelligence for India</p>
+      <h1 className="mt-1 text-3xl font-semibold">Policymaker dashboard</h1>
+      <p className="mt-1 text-sm text-zinc-500">Synthetic demo data (data_source: synthetic_demo). Metrics computed deterministically.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map(([label, value]) => (
