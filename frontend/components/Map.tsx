@@ -37,10 +37,13 @@ function infoHtml(h: Hotspot): string {
     `<a href="${hotspotHref(h)}">View Evidence</a></div>`;
 }
 
-export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
+export default function Map({ hotspots, selectedId, onSelect }: {
+  hotspots: Hotspot[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [mapsFailed, setMapsFailed] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const pts = hotspots.filter((h) => h.latitude != null && h.longitude != null).slice(0, 50);
   const selected = hotspots.find((h) => h.id === selectedId) ?? null;
 
@@ -62,6 +65,7 @@ export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
             title: `${p.district} — ${p.category} (${p.signals})`,
           });
           marker.addListener("click", () => {
+            onSelect(p.id);
             info.setContent(infoHtml(p));
             info.open(map, marker);
           });
@@ -94,7 +98,7 @@ export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
             opacity={selected?.id === p.id ? 1 : 0.75}
             stroke={selected?.id === p.id ? "#000" : "none"}
             style={{ cursor: "pointer" }}
-            onClick={() => setSelectedId(p.id)}
+            onClick={() => onSelect(p.id)}
           >
             <title>{`${p.district}, ${p.state} — ${p.category}: ${p.signals} signals`}</title>
           </circle>
