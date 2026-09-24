@@ -1,33 +1,55 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Hotspot = {
+  id: string;
   state: string;
   district: string;
   category: string;
   signals: number;
+  signal_count: number;
   recent_30d: number;
+  demand_index: number;
+  demand_trend: number | null;
+  trend_pct: number | null;
+  priority_level: string;
   latitude: number | null;
   longitude: number | null;
   population: number;
+  population_affected: number;
   gap_index: number | null;
+  infrastructure_gap: number | null;
   investment_inr: number;
+  investment: number;
   priority_score: number;
   factors: Record<string, number>;
 };
 
+export type TopCategory = {
+  category: string;
+  count: number;
+  trend_percent: number | null;
+};
+
 export type Summary = {
   total_signals: number;
+  citizen_signals: number;
   active_hotspots: number;
   high_priority_areas: number;
   population_covered: number;
+  population_affected: number;
+  top_categories: TopCategory[];
   top_hotspots: Hotspot[];
 };
 
 export type PulseItem = {
   category: string;
+  current_count: number;
+  previous_count: number;
+  trend_percent: number | null;
+  status: "ok" | "insufficient_data";
   recent_30d: number;
   prior: number;
-  growth_pct: number;
+  growth_pct: number | null;
 };
 
 export type HotspotDetail = {
@@ -55,3 +77,12 @@ export function fmtInr(n: number): string {
 
 export const title = (s: string) =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+export function hotspotHref(h: { state: string; district: string; category: string }): string {
+  return `/hotspots/${encodeURIComponent(h.state)}/${encodeURIComponent(h.district)}/${encodeURIComponent(h.category)}`;
+}
+
+export function trendLabel(t: number | null | undefined): string {
+  if (t == null) return "new";
+  return `${t >= 0 ? "+" : ""}${t}%`;
+}

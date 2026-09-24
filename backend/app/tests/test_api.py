@@ -230,3 +230,84 @@ def test_simulate_validates_budget():
     assert client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": -5}).status_code == 422
     r = client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": 100})
     assert r.status_code == 200 and "projected_population_reached" in r.json()
+
+
+# --- Phase 6-8: dashboard / hotspot engine / pulse ---
+
+def _empty_override():
+    from sqlalchemy.pool import StaticPool
+    e2 = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    models.Base.metadata.create_all(bind=e2)
+    S2 = sessionmaker(bind=e2)
+
+    def _db2():
+        db = S2()
+        try:
+            yield db
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_db] = _db2
+    return S2
+
+
+def test_empty_database_returns_zeros():
+    _empty_override()
+    try:
+        s = client.get("/api/v1/dashboard/summary").json()
+        assert s["citizen_signals"] == 0 and s["active_hotspots"] == 0
+        assert s["high_priority_areas"] == 0 and s["population_affected"] == 0
+        assert s["top_categories"] == [] and s["top_hotspots"] == []
+        assert client.get("/api/v1/hotspots").json()["hotspots"] == []
+        assert client.get("/api/v1/civic-pulse").json()["pulse"] == []
+    finally:
+        app.dependency_overrides[get_db] = _db
+
+
+def test_pulse_insufficient_data_without_history():
+    from datetime import datetime
+    S2 = _empty_override()
+    try:
+        db = S2()
+        db.add(models.CitizenSignal(raw_text="t", language="en", category="water",
+                                    severity="high", state="Bihar", district="Patna",
+                                    created_at=datetime.utcnow()))
+        db.commit()
+        db.close()
+        pulse = client.get("/api/v1/civic-pulse").json()["pulse"]
+        assert len(pulse) == 1 and pulse[0]["status"] == "insufficient_data"
+        assert pulse[0]["trend_percent"] is None
+    finally:
+        app.dependency_overrides[get_db] = _db
+
+
+def test_hotspot_filters():
+    assert client.get("/api/v1/hotspots", params={"category": "nonsense"}).status_code == 422
+    assert client.get("/api/v1/hotspots", params={"priority": "urgent"}).status_code == 422
+    r = client.get("/api/v1/hotspots", params={"state": "Bihar", "category": "healthcare"}).json()
+    assert r["count"] > 0
+    assert all(h["state"] == "Bihar" and h["category"] == "healthcare" for h in r["hotspots"])
+    r2 = client.get("/api/v1/hotspots", params={"priority": "high"}).json()
+    assert all(h["priority_level"] == "high" for h in r2["hotspots"])
+    r3 = client.get("/api/v1/hotspots", params={"severity": "critical"}).json()
+    assert r3["count"] >= 0
+
+
+def test_hotspot_by_id():
+    h = client.get("/api/v1/hotspots").json()["hotspots"][0]
+    assert set(["id", "signal_count", "demand_index", "priority_level"]) <= set(h)
+    r = client.get(f"/api/v1/hotspots/by-id/{h['id']}")
+    assert r.status_code == 200
+    assert r.json()["location"] == {"state": h["state"], "district": h["district"]}
+    assert client.get("/api/v1/hotspots/by-id/!!!").status_code == 404
+
+
+def test_summary_top_categories():
+    top = client.get("/api/v1/dashboard/summary").json()["top_categories"]
+    assert len(top) > 0 and set(["category", "count", "trend_percent"]) <= set(top[0])
+
+
+def test_hotspot_scores_deterministic_across_calls():
+    a = client.get("/api/v1/hotspots").json()
+    b = client.get("/api/v1/hotspots").json()
+    assert a == b

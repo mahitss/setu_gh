@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
 
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
@@ -27,10 +28,21 @@ function loadMaps(): Promise<void> {
   });
 }
 
+function infoHtml(h: Hotspot): string {
+  return `<div style="font-size:13px;line-height:1.5;max-width:220px">` +
+    `<b>${title(h.category)}</b><br>${h.district}, ${h.state}<br>` +
+    `${fmtInt(h.signals)} signals · ${trendLabel(h.trend_pct)}<br>` +
+    `Infrastructure gap: ${h.gap_index?.toFixed(2) ?? "—"}<br>` +
+    `Population affected: ${fmtInt(h.population)}<br>` +
+    `<a href="${hotspotHref(h)}">View Evidence</a></div>`;
+}
+
 export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const [mapsFailed, setMapsFailed] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const pts = hotspots.filter((h) => h.latitude != null && h.longitude != null).slice(0, 50);
+  const selected = hotspots.find((h) => h.id === selectedId) ?? null;
 
   useEffect(() => {
     if (!MAPS_KEY || mapsFailed || !ref.current || pts.length === 0) return;
@@ -42,11 +54,16 @@ export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
           center: { lat: 23.5, lng: 80 },
           zoom: 5,
         });
+        const info = new window.google.maps.InfoWindow();
         for (const p of pts) {
-          new window.google.maps.Marker({
+          const marker = new window.google.maps.Marker({
             position: { lat: p.latitude, lng: p.longitude },
             map,
             title: `${p.district} — ${p.category} (${p.signals})`,
+          });
+          marker.addListener("click", () => {
+            info.setContent(infoHtml(p));
+            info.open(map, marker);
           });
         }
       })
@@ -69,20 +86,32 @@ export default function Map({ hotspots }: { hotspots: Hotspot[] }) {
       <svg viewBox="0 0 100 100" className="h-96 w-full rounded-md border bg-zinc-50" role="img" aria-label="Hotspot map (fallback)">
         {pts.map((p) => (
           <circle
-            key={`${p.state}-${p.district}-${p.category}`}
+            key={p.id}
             cx={X(p.longitude!)}
             cy={Y(p.latitude!)}
             r={1.2 + (p.signals / max) * 2.2}
             fill={p.priority_score >= 0.7 ? "#b91c1c" : p.priority_score >= 0.5 ? "#d97706" : "#3f6212"}
-            opacity={0.75}
+            opacity={selected?.id === p.id ? 1 : 0.75}
+            stroke={selected?.id === p.id ? "#000" : "none"}
+            style={{ cursor: "pointer" }}
+            onClick={() => setSelectedId(p.id)}
           >
             <title>{`${p.district}, ${p.state} — ${p.category}: ${p.signals} signals`}</title>
           </circle>
         ))}
         {pts.length === 0 && <text x="50" y="50" textAnchor="middle" fontSize="3">No coordinates</text>}
       </svg>
+      {selected && (
+        <div className="mt-2 rounded-md border p-3 text-sm">
+          <p className="font-semibold">{title(selected.category)} — {selected.district}, {selected.state}</p>
+          <p className="mt-1">{fmtInt(selected.signals)} signals · {trendLabel(selected.trend_pct)}</p>
+          <p>Infrastructure gap: {selected.gap_index?.toFixed(2) ?? "—"} ({title(selected.priority_level)} priority)</p>
+          <p>Population affected: {fmtInt(selected.population)}</p>
+          <a className="mt-1 inline-block underline" href={hotspotHref(selected)}>View Evidence</a>
+        </div>
+      )}
       <p className="mt-1 text-xs text-zinc-500">
-        {MAPS_KEY ? "Interactive map unavailable — showing fallback." : "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for the interactive map."} Circle size = signals; red = high priority.
+        {MAPS_KEY ? "Interactive map unavailable — showing fallback." : "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for the interactive map."} Circle size = signals; red = high priority. Click a marker for details.
       </p>
     </div>
   );

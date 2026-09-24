@@ -48,6 +48,26 @@ export default function HotspotDetailPage() {
   }
 
   const h = detail.hotspot;
+  const f = h.factors;
+  const flagged: [string, string][] = [
+    (f.demand_index ?? 0) >= 0.6
+      ? ["✓", "High citizen demand"]
+      : ["○", "Moderate citizen demand"],
+    h.trend_pct == null
+      ? ["○", "New signal cluster — not enough history for a trend"]
+      : h.trend_pct > 5
+        ? ["✓", `Increasing demand trend (${h.trend_pct >= 0 ? "+" : ""}${h.trend_pct}%)`]
+        : ["△", "Stable or declining demand trend"],
+    (f.infra_gap ?? 0) >= 0.5
+      ? ["✓", "Low infrastructure coverage"]
+      : ["△", "Adequate infrastructure coverage"],
+    (f.pop_impact ?? 0) >= 0.5
+      ? ["✓", `Large affected population (${fmtInt(h.population)})`]
+      : ["○", "Smaller population footprint"],
+    (f.invest_gap ?? 0) >= 0.5
+      ? ["✓", "Low existing investment"]
+      : ["△", "Existing investment already present"],
+  ];
   const evidence: [string, string][] = [
     ["Citizen signals", fmtInt(h.signals)],
     ["Signals (last 30d)", fmtInt(h.recent_30d)],
@@ -63,6 +83,9 @@ export default function HotspotDetailPage() {
       <h1 className="mt-2 text-3xl font-semibold">
         {title(h.category)} in {h.district}, {h.state}
       </h1>
+      <p className="mt-2 inline-block rounded bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600">
+        Prototype priority analysis — {title(h.priority_level)} priority
+      </p>
 
       <h2 className="mt-8 text-xl font-semibold">Evidence</h2>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -83,6 +106,15 @@ export default function HotspotDetailPage() {
               <span className="block h-2 rounded bg-black" style={{ width: `${Math.round(v * 100)}%` }} />
             </span>
             <span className="w-12 text-right font-medium">{v.toFixed(2)}</span>
+          </li>
+        ))}
+      </ul>
+
+      <h2 className="mt-8 text-xl font-semibold">Why this area is flagged</h2>
+      <ul className="mt-3 space-y-1.5 text-sm">
+        {flagged.map(([mark, label]) => (
+          <li key={label} className="flex gap-2">
+            <span className="w-5">{mark}</span><span>{label}</span>
           </li>
         ))}
       </ul>

@@ -1,35 +1,76 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
-import { apiGet, fmtInt, fmtInr, title } from "@/lib/api";
+import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot, PulseItem, Summary } from "@/lib/api";
+
+const CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"];
+const PRIORITIES = ["critical", "high", "medium", "low", "minimal"];
 
 export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [pulse, setPulse] = useState<PulseItem[]>([]);
+  const [states, setStates] = useState<string[]>([]);
+  const [fState, setFState] = useState("");
+  const [fDistrict, setFDistrict] = useState("");
+  const [fCategory, setFCategory] = useState("");
+  const [fPriority, setFPriority] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
+  async function loadHotspots(signal: AbortSignal, filters: Record<string, string>) {
+    const q = new URLSearchParams({ limit: "50" });
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v) q.set(k, v);
+    });
+    const h = await apiGet<{ hotspots: Hotspot[] }>(`/api/v1/hotspots?${q}`, signal);
+    setHotspots(h.hotspots);
+  }
+
+  // Filtered reloads hit the backend API — never fake client-side filtering.
+  function refetch(filters: { state: string; district: string; category: string; priority: string }) {
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setFiltering(true);
+    loadHotspots(ctrl.signal, filters)
+      .catch((e) => {
+        if (e instanceof DOMException && e.name === "AbortError") return;
+        setError("Cannot reach the server. Start the backend and refresh.");
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setFiltering(false);
+      });
+  }
+
+  // Initial load: summary + pulse + states + unfiltered hotspots.
   useEffect(() => {
     const ctrl = new AbortController();
     Promise.all([
       apiGet<Summary>("/api/v1/dashboard/summary", ctrl.signal),
-      apiGet<{ hotspots: Hotspot[] }>("/api/v1/hotspots", ctrl.signal),
       apiGet<{ pulse: PulseItem[] }>("/api/v1/civic-pulse", ctrl.signal),
+      apiGet<{ hotspots: Hotspot[] }>("/api/v1/hotspots?limit=100", ctrl.signal),
     ])
-      .then(([s, h, p]) => {
+      .then(([s, p, h]) => {
         setSummary(s);
-        setHotspots(h.hotspots);
         setPulse(p.pulse);
+        setHotspots(h.hotspots.slice(0, 50));
+        setStates([...new Set(h.hotspots.map((x) => x.state))].sort());
       })
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setError("Cannot reach the server. Start the backend and refresh.");
-      });
+      })
+      .finally(() => setLoading(false));
     return () => ctrl.abort();
   }, []);
+
+  const districts = [...new Set(hotspots.filter((h) => !fState || h.state === fState).map((h) => h.district))].sort();
 
   if (error) {
     return (
@@ -38,7 +79,7 @@ export default function DashboardPage() {
       </main>
     );
   }
-  if (!summary) {
+  if (loading || !summary) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
         <p className="text-zinc-600">Loading dashboard…</p>
@@ -47,15 +88,16 @@ export default function DashboardPage() {
   }
 
   const kpis = [
-    ["Citizen Signals", fmtInt(summary.total_signals)],
+    ["Citizen Signals", fmtInt(summary.citizen_signals)],
     ["Active Hotspots", fmtInt(summary.active_hotspots)],
     ["High Priority Areas", fmtInt(summary.high_priority_areas)],
-    ["Population Covered", fmtInt(summary.population_covered)],
+    ["Population Affected", fmtInt(summary.population_affected)],
   ];
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-3xl font-semibold">Policymaker dashboard</h1>
+      <p className="text-sm font-medium text-zinc-500">JanSetu · Policymaker Intelligence</p>
+      <h1 className="mt-1 text-3xl font-semibold">Demand dashboard</h1>
       <p className="mt-1 text-sm text-zinc-500">Synthetic demo data. Metrics computed deterministically.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -68,52 +110,83 @@ export default function DashboardPage() {
       </div>
 
       <h2 className="mt-10 text-xl font-semibold">Demand hotspots</h2>
+      <div className="mt-3 flex flex-wrap gap-3 text-sm">
+        <label>State{" "}
+          <select className="rounded-md border p-1.5" value={fState} onChange={(e) => { const v = e.target.value; setFState(v); setFDistrict(""); refetch({ state: v, district: "", category: fCategory, priority: fPriority }); }}>
+            <option value="">All</option>
+            {states.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </label>
+        <label>District{" "}
+          <select className="rounded-md border p-1.5" value={fDistrict} onChange={(e) => { const v = e.target.value; setFDistrict(v); refetch({ state: fState, district: v, category: fCategory, priority: fPriority }); }}>
+            <option value="">All</option>
+            {districts.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </label>
+        <label>Category{" "}
+          <select className="rounded-md border p-1.5" value={fCategory} onChange={(e) => { const v = e.target.value; setFCategory(v); refetch({ state: fState, district: fDistrict, category: v, priority: fPriority }); }}>
+            <option value="">All</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{title(c)}</option>)}
+          </select>
+        </label>
+        <label>Priority{" "}
+          <select className="rounded-md border p-1.5" value={fPriority} onChange={(e) => { const v = e.target.value; setFPriority(v); refetch({ state: fState, district: fDistrict, category: fCategory, priority: v }); }}>
+            <option value="">All</option>
+            {PRIORITIES.map((p) => <option key={p} value={p}>{title(p)}</option>)}
+          </select>
+        </label>
+        {filtering && <span className="self-center text-zinc-500">Updating…</span>}
+      </div>
+
       <div className="mt-4">
         <Map hotspots={hotspots} />
       </div>
 
-      <div className="mt-4 overflow-x-auto rounded-md border">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-zinc-50">
-            <tr>
-              {["District", "Issue", "Signals", "Last 30d", "Gap", "Population", "Investment", "Priority"].map((h) => (
-                <th key={h} className="px-3 py-2 font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {hotspots.slice(0, 20).map((h) => (
-              <tr key={`${h.state}-${h.district}-${h.category}`} className="border-t">
-                <td className="px-3 py-2">
-                  <Link
-                    className="underline"
-                    href={`/hotspots/${encodeURIComponent(h.state)}/${encodeURIComponent(h.district)}/${encodeURIComponent(h.category)}`}
-                  >
-                    {h.district}, {h.state}
-                  </Link>
-                </td>
-                <td className="px-3 py-2">{title(h.category)}</td>
-                <td className="px-3 py-2">{fmtInt(h.signals)}</td>
-                <td className="px-3 py-2">{fmtInt(h.recent_30d)}</td>
-                <td className="px-3 py-2">{h.gap_index?.toFixed(2) ?? "—"}</td>
-                <td className="px-3 py-2">{fmtInt(h.population)}</td>
-                <td className="px-3 py-2">{fmtInr(h.investment_inr)}</td>
-                <td className="px-3 py-2">{h.priority_score.toFixed(2)}</td>
+      {hotspots.length === 0 ? (
+        <p className="mt-4 rounded-md border p-4 text-zinc-600">No hotspots match these filters.</p>
+      ) : (
+        <div className="mt-4 overflow-x-auto rounded-md border">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-zinc-50">
+              <tr>
+                {["District", "Category", "Demand", "Trend", "Infrastructure Gap", "Population", "Priority"].map((h) => (
+                  <th key={h} className="px-3 py-2 font-medium">{h}</th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {hotspots.slice(0, 20).map((h) => (
+                <tr key={h.id} className="border-t">
+                  <td className="px-3 py-2">
+                    <Link className="underline" href={hotspotHref(h)}>{h.district}, {h.state}</Link>
+                  </td>
+                  <td className="px-3 py-2">{title(h.category)}</td>
+                  <td className="px-3 py-2">{fmtInt(h.signal_count)}</td>
+                  <td className="px-3 py-2">{trendLabel(h.trend_pct)}</td>
+                  <td className="px-3 py-2">{h.gap_index?.toFixed(2) ?? "—"}</td>
+                  <td className="px-3 py-2">{fmtInt(h.population)}</td>
+                  <td className="px-3 py-2">{title(h.priority_level)} ({h.priority_score.toFixed(2)})</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <h2 className="mt-10 text-xl font-semibold">Civic Pulse — emerging demand</h2>
+      <p className="mt-1 text-sm text-zinc-500">Last 30 days vs prior 30 days.</p>
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
         {pulse.map((p) => (
           <div key={p.category} className="rounded-md border p-4">
             <p className="font-medium">{title(p.category)}</p>
-            <p className={`mt-1 text-2xl font-semibold ${p.growth_pct >= 0 ? "text-red-700" : "text-green-700"}`}>
-              {p.growth_pct >= 0 ? "+" : ""}{p.growth_pct}%
-            </p>
-            <p className="mt-1 text-sm text-zinc-500">{fmtInt(p.recent_30d)} signals (30d)</p>
+            {p.status === "insufficient_data" ? (
+              <p className="mt-1 text-sm text-zinc-500">insufficient_data — not enough history yet</p>
+            ) : (
+              <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
+                {trendLabel(p.trend_percent)}
+              </p>
+            )}
+            <p className="mt-1 text-sm text-zinc-500">{fmtInt(p.current_count)} signals (30d)</p>
           </div>
         ))}
       </div>
