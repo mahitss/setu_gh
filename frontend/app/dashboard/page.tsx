@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
+import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot, PulseItem, Summary } from "@/lib/api";
 
@@ -21,6 +22,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [question, setQuestion] = useState("");
+  const [nlLoading, setNlLoading] = useState(false);
+  const [nlError, setNlError] = useState<string | null>(null);
+  const [nlResult, setNlResult] = useState<{ matches: Hotspot[]; count: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   async function loadHotspots(signal: AbortSignal, filters: Record<string, string>) {
@@ -46,6 +51,30 @@ export default function DashboardPage() {
       .finally(() => {
         if (!ctrl.signal.aborted) setFiltering(false);
       });
+  }
+
+  async function askNl() {
+    setNlError(null);
+    setNlResult(null);
+    if (!question.trim()) {
+      setNlError("Type a question first.");
+      return;
+    }
+    setNlLoading(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/policy-query/nl`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question.trim() }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error("Could not answer that question. Try simpler wording.");
+      setNlResult(data);
+    } catch (e) {
+      setNlError(e instanceof Error ? e.message : "Could not answer that question.");
+    } finally {
+      setNlLoading(false);
+    }
   }
 
   // Initial load: summary + pulse + states + unfiltered hotspots.
@@ -190,6 +219,35 @@ export default function DashboardPage() {
           </div>
         ))}
       </div>
+
+      <h2 className="mt-10 text-xl font-semibold">Ask in plain English</h2>
+      <p className="mt-1 text-sm text-zinc-500">e.g. “Which districts have high healthcare demand but low existing investment?”</p>
+      <div className="mt-3 flex gap-2">
+        <input
+          className="w-full rounded-md border p-2 text-sm"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask about demand, gaps, investment…"
+          disabled={nlLoading}
+        />
+        <Button onClick={askNl} disabled={nlLoading}>{nlLoading ? "…" : "Ask"}</Button>
+      </div>
+      {nlError && <p role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{nlError}</p>}
+      {nlResult && (
+        <div className="mt-3 rounded-md border p-4 text-sm">
+          <p className="font-medium">{nlResult.count} matching district{nlResult.count === 1 ? "" : "s"}</p>
+          <ul className="mt-2 space-y-1">
+            {nlResult.matches.slice(0, 10).map((m) => (
+              <li key={m.id}>
+                <Link className="underline" href={hotspotHref(m)}>
+                  {m.district}, {m.state}
+                </Link>{" "}— {title(m.category)} · {fmtInt(m.signals)} signals · gap {m.gap_index?.toFixed(2) ?? "—"}
+              </li>
+            ))}
+          </ul>
+          {nlResult.count === 0 && <p className="mt-1 text-zinc-500">No districts match. Try broader wording.</p>}
+        </div>
+      )}
     </main>
   );
 }

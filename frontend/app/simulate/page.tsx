@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { fmtInt, title } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -91,13 +92,13 @@ export default function SimulatePage() {
         ))}
       </div>
 
-      <button
-        className="mt-6 rounded-md bg-black px-5 py-2.5 text-white disabled:opacity-50"
+      <Button
+        className="mt-6"
         onClick={run}
         disabled={loading}
       >
         {loading ? "Simulating…" : "Run simulation"}
-      </button>
+      </Button>
 
       {error && (
         <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>

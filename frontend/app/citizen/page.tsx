@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -224,13 +225,13 @@ export default function CitizenPage() {
         disabled={loading}
       />
 
-      <button
-        className="mt-6 rounded-md bg-black px-5 py-2.5 text-white disabled:opacity-50"
+      <Button
+        className="mt-6"
         onClick={submit}
         disabled={loading}
       >
         {loading ? "Submitting…" : "Submit Request"}
-      </button>
+      </Button>
 
       {error && (
         <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-red-800">

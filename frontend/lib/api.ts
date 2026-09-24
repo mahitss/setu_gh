@@ -78,8 +78,8 @@ export function fmtInr(n: number): string {
 export const title = (s: string) =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-export function hotspotHref(h: { state: string; district: string; category: string }): string {
-  return `/hotspots/${encodeURIComponent(h.state)}/${encodeURIComponent(h.district)}/${encodeURIComponent(h.category)}`;
+export function hotspotHref(h: { id: string }): string {
+  return `/hotspots/${encodeURIComponent(h.id)}`;
 }
 
 export function trendLabel(t: number | null | undefined): string {
