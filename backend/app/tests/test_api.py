@@ -516,3 +516,32 @@ def test_emerging_hotspots_shape():
         assert e["trend_percent"] is not None
     trends = [e["trend_percent"] for e in em]
     assert trends == sorted(trends, reverse=True)
+
+
+# --- Submission: recent signals + failure envelopes ---
+
+def test_recent_signals():
+    body = client.get("/api/v1/signals/recent?limit=5").json()
+    assert len(body["signals"]) == 5
+    assert set(["id", "category", "severity", "summary", "language", "state", "district"]) <= set(body["signals"][0])
+    assert client.get("/api/v1/signals/recent?limit=0").status_code == 422
+    assert client.get("/api/v1/signals/recent?limit=500").status_code == 422
+
+
+def test_db_failure_returns_safe_envelope():
+    from sqlalchemy.exc import OperationalError
+
+    def _boom():
+        raise OperationalError("SELECT 1", {}, Exception("secret db password xyz"))
+        yield
+
+    app.dependency_overrides[get_db] = _boom
+    try:
+        r = client.get("/api/v1/dashboard/summary")
+        assert r.status_code == 500
+        body = r.json()
+        assert body["success"] is False and body["error"]["code"] == "INTERNAL_ERROR"
+        raw = json.dumps(body).lower()
+        assert "xyz" not in raw and "password" not in raw and "traceback" not in raw
+    finally:
+        app.dependency_overrides[get_db] = _db

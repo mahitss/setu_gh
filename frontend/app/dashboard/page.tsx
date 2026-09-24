@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { EmergingHotspot, Hotspot, PulseItem, Summary } from "@/lib/api";
 
+export type RecentSignal = {
+  id: number;
+  category: string;
+  severity: string;
+  summary: string | null;
+  language: string;
+  state: string;
+  district: string;
+  created_at: string | null;
+};
+
 const CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"];
 const PRIORITIES = ["critical", "high", "medium", "low", "minimal"];
 
@@ -15,6 +26,7 @@ export default function DashboardPage() {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [pulse, setPulse] = useState<PulseItem[]>([]);
   const [emerging, setEmerging] = useState<EmergingHotspot[]>([]);
+  const [recent, setRecent] = useState<RecentSignal[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [fState, setFState] = useState("");
   const [fDistrict, setFDistrict] = useState("");
@@ -85,11 +97,13 @@ export default function DashboardPage() {
       apiGet<Summary>("/api/v1/dashboard/summary", ctrl.signal),
       apiGet<{ pulse: PulseItem[]; emerging_hotspots: EmergingHotspot[] }>("/api/v1/civic-pulse", ctrl.signal),
       apiGet<{ hotspots: Hotspot[] }>("/api/v1/hotspots?limit=100", ctrl.signal),
+      apiGet<{ signals: RecentSignal[] }>("/api/v1/signals/recent?limit=8", ctrl.signal),
     ])
-      .then(([s, p, h]) => {
+      .then(([s, p, h, r]) => {
         setSummary(s);
         setPulse(p.pulse);
         setEmerging(p.emerging_hotspots ?? []);
+        setRecent(r.signals);
         setHotspots(h.hotspots.slice(0, 50));
         setStates([...new Set(h.hotspots.map((x) => x.state))].sort());
       })
@@ -238,6 +252,18 @@ export default function DashboardPage() {
         ))}
         {emerging.length === 0 && <p className="text-sm text-zinc-500">No emerging hotspots right now.</p>}
       </div>
+
+      <h2 className="mt-10 text-xl font-semibold">Recent signals</h2>
+      <ul className="mt-3 space-y-2 text-sm">
+        {recent.map((s) => (
+          <li key={s.id} className="rounded-md border p-3">
+            <span className="font-medium">{title(s.category)}</span>
+            <span className="text-zinc-500"> · {title(s.severity)} · {s.district}, {s.state}</span>
+            <p className="mt-1 text-zinc-700">{s.summary ?? "—"}</p>
+          </li>
+        ))}
+        {recent.length === 0 && <p className="text-sm text-zinc-500">No signals yet.</p>}
+      </ul>
 
       <h2 className="mt-10 text-xl font-semibold">Ask in plain English</h2>
       <p className="mt-1 text-sm text-zinc-500">e.g. “Which districts have high healthcare demand but low existing investment?”</p>

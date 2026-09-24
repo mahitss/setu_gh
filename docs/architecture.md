@@ -2,25 +2,20 @@
 
 ```mermaid
 flowchart TD
-    Citizen --> Frontend[Next.js Frontend]
-    Frontend --> API[FastAPI Backend]
-    API --> SpeechToText[Google Speech-to-Text]
-    SpeechToText --> Transcript[Transcript]
-    Transcript --> Gemini[Gemini Extraction]
-    CitizenText[Citizen Text] --> Gemini
-    Gemini --> CivicSignal[(Structured CivicSignal)]
-    CivicSignal --> Database[(Postgres / SQLite)]
-    Database --> DataEngine[Deterministic Data Engine]
-    DataEngine --> CivicPulse[Civic Pulse]
-    DataEngine --> Hotspots[Hotspot Engine]
-    Hotspots --> RecommendationEngine[Recommendation Engine]
-    RecommendationEngine --> GeminiExplanation[Gemini Explanation]
-    Hotspots --> Simulator[Simulation Engine]
-    Dashboard[Policymaker Dashboard] --> API
-    SimulatorUI[Simulator UI] --> API
-    CloudRunFrontend[Cloud Run: Frontend] --> CloudRunBackend[Cloud Run: Backend]
-    CloudRunBackend --> Database
+    Citizen --> Nextjs[Next.js]
+    Nextjs --> FastAPI[FastAPI]
+    FastAPI --> GoogleAI[Google AI: Gemini, Speech]
+    GoogleAI --> CivicSignal[Civic Signal]
+    CivicSignal --> Database[Database]
+    Database --> DataFusion[Data Fusion]
+    DataFusion --> CivicPulse[CivicPulse]
+    DataFusion --> Hotspots[Hotspots]
+    DataFusion --> Evidence[Evidence]
+    Hotspots --> Recommendation[Recommendation]
+    Recommendation --> Simulator[Simulator]
+    Simulator --> Policymaker[Policymaker]
 ```
 
 Rules: Gemini extracts/explains only (validated output, template fallback).
-Python owns every number. Allowlisted filters only — the model never touches SQL.
+Python owns every number. Allowlisted filters only — the model never touches
+SQL. Deploy: Cloud Run frontend + backend, Postgres, GCS, Speech-to-Text.

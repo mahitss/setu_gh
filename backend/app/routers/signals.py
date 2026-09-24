@@ -48,3 +48,16 @@ def create_signal(payload: SignalIn, db: Session = Depends(get_db)):
         log.exception("Database persistence failed")
         raise HTTPException(status_code=500, detail="Could not save your request. Please try again.")
     return {"success": True, "signal": sig}
+
+
+@router.get("/signals/recent")
+def recent_signals(limit: int = 10, db: Session = Depends(get_db)):
+    """Latest citizen signals for the dashboard. Aggregates only — no bulk export."""
+    if limit < 1 or limit > 50:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 50")
+    rows = (db.query(CitizenSignal).order_by(CitizenSignal.id.desc()).limit(limit).all())
+    return {"signals": [
+        {"id": r.id, "category": r.category, "severity": r.severity,
+         "summary": r.summary, "language": r.language, "state": r.state,
+         "district": r.district, "created_at": r.created_at.isoformat() if r.created_at else None}
+        for r in rows]}
