@@ -14,7 +14,9 @@ router = APIRouter()
 
 def _hotspot_rows(db: Session):
     signals = (db.query(CitizenSignal.state, CitizenSignal.district, CitizenSignal.category,
-                        func.count().label("n"))
+                        func.count().label("n"),
+                        func.avg(CitizenSignal.latitude).label("lat"),
+                        func.avg(CitizenSignal.longitude).label("lon"))
                .group_by(CitizenSignal.state, CitizenSignal.district, CitizenSignal.category).all())
     max_n = max([r.n for r in signals], default=1)
     max_pop = db.query(func.max(Demographic.population)).scalar() or 1
@@ -34,6 +36,8 @@ def _hotspot_rows(db: Session):
                                         investment_gap(inv, avg_inv), trend_score(recent, prior))
         out.append({"state": r.state, "district": r.district, "category": r.category,
                     "signals": r.n, "recent_30d": recent,
+                    "latitude": round(r.lat, 4) if r.lat is not None else None,
+                    "longitude": round(r.lon, 4) if r.lon is not None else None,
                     "population": demo.population if demo else 0,
                     "gap_index": infra.gap_index if infra else None,
                     "investment_inr": inv, "priority_score": score, "factors": factors})

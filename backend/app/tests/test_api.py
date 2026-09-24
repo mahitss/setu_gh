@@ -155,6 +155,21 @@ def test_hotspot_aggregation():
     assert len(hotspots) > 0 and hotspots[0]["priority_score"] <= 1.0
 
 
+def test_hotspot_rows_carry_coordinates_and_factors():
+    hotspots = client.get("/api/v1/hotspots").json()["hotspots"]
+    h = hotspots[0]
+    assert h["latitude"] is not None and h["longitude"] is not None
+    assert set(["demand_index", "infra_gap", "pop_impact", "invest_gap", "trend"]) <= set(h["factors"])
+
+
+def test_hotspot_detail_evidence():
+    h = client.get("/api/v1/hotspots").json()["hotspots"][0]
+    r = client.get(f"/api/v1/hotspots/{h['state']}/{h['district']}/{h['category']}")
+    assert r.status_code == 200
+    body = r.json()
+    assert "evidence" in body and "recommendation" in body
+
+
 def test_scoring_deterministic():
     s1, _ = eng.priority_score(0.8, 0.7, 0.6, 0.5, 0.5)
     s2, _ = eng.priority_score(0.8, 0.7, 0.6, 0.5, 0.5)
