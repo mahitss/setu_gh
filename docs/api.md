@@ -1,6 +1,7 @@
 # API
 GET /api/v1/health — liveness.
-POST /api/v1/citizen/signals {raw_text, language?, state?, district?, locality?, lat?, lon?} — ingest.
+POST /api/v1/citizen/signals {text, language="auto", state?, district?, locality?, latitude?, longitude?} — ingest. Returns {success, signal}.
+Allowed categories: healthcare, education, roads, water, sanitation, electricity, public_transport, digital_infrastructure, housing, environment, other.
 POST /api/v1/citizen/voice — Phase 10 stub.
 GET /api/v1/dashboard/summary — KPIs + top hotspots.
 GET /api/v1/hotspots — ranked deterministic hotspots with factors.

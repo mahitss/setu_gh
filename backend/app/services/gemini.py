@@ -1,61 +1,158 @@
-"""Gemini integration boundary (Phase 4).
+"""Gemini structured-extraction boundary (Phase 4).
 
-Rules: Gemini returns STRUCTURED extraction only. All numbers/scores are
-computed by services/engine.py. Never trust LLM numerics.
-Currently a rule-based fallback so the pipeline works without a key.
+Rules:
+- Gemini returns STRUCTURED extraction only. All numbers/scores are computed
+  by services/engine.py. Never trust LLM numerics.
+- Location (state/district/locality) comes from request metadata, NOT the model.
+  The model must not hallucinate locations.
+- Model output is validated with Pydantic (ExtractedSignal). Malformed output
+  falls back to the deterministic rule-based extractor so ingestion never breaks.
+- Works without GEMINI_API_KEY (rule fallback) so tests/demo run offline.
 """
+import json
+import logging
 import os
 import re
+from typing import Literal, Optional
 
-CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"]
+from pydantic import BaseModel, Field, ValidationError
 
-_KEYWORDS = {
-    "healthcare": ["hospital", "doctor", "clinic", "ambulance", "health", "अस्पताल", "डॉक्टर", "एम्बुलेंस", "स्वास्थ्य"],
-    "water": ["water", "tap", "pipeline", "well", "पानी", "जल"],
-    "roads": ["road", "bridge", "pothole", "highway", "सड़क", "रास्ता"],
-    "education": ["school", "teacher", "classroom", "स्कूल", "शिक्षक", "पढ़ाई"],
-    "electricity": ["power", "electricity", "voltage", "बिजली"],
-    "sanitation": ["drain", "garbage", "toilet", "sewage", "सफाई", "कचरा", "नाली"],
+log = logging.getLogger("jansetu.gemini")
+
+Category = Literal[
+    "healthcare",
+    "education",
+    "roads",
+    "water",
+    "sanitation",
+    "electricity",
+    "public_transport",
+    "digital_infrastructure",
+    "housing",
+    "environment",
+    "other",
+]
+
+ALLOWED_CATEGORIES: list[str] = [
+    "healthcare",
+    "education",
+    "roads",
+    "water",
+    "sanitation",
+    "electricity",
+    "public_transport",
+    "digital_infrastructure",
+    "housing",
+    "environment",
+    "other",
+]
+
+Severity = Literal["low", "medium", "high", "critical"]
+
+SYSTEM_INSTRUCTION = (
+    "You are a civic issue classification system. "
+    "Convert citizen requests into structured civic signals. "
+    "Do not invent facts. "
+    "Only extract information present in the input or provided metadata. "
+    f"Use only these allowed categories: {', '.join(ALLOWED_CATEGORIES)}. "
+    "Severity must represent the urgency of the reported civic issue, "
+    "not the emotional tone of the citizen. "
+    "Do not guess locations; use the provided metadata as-is. "
+    "Return valid structured JSON only."
+)
+
+EXTRACTION_SCHEMA = (
+    "JSON keys: category (exactly one allowed value), "
+    "sub_category (string like '<category>_access'), "
+    "severity (low|medium|high|critical), "
+    "summary (<=25 words, facts only, no new claims), "
+    "language (ISO 639-1 code, e.g. hi, en). Reply JSON only."
+)
+
+
+class ExtractedSignal(BaseModel):
+    """Validated shape of Gemini output. Location/confidence handled server-side."""
+
+    category: Category
+    sub_category: str = Field(min_length=1, max_length=128)
+    severity: Severity
+    summary: str = Field(min_length=1, max_length=500)
+    language: str = Field(min_length=2, max_length=8)
+    confidence: float = Field(default=0.8, ge=0.0, le=1.0)
+
+
+_KEYWORDS: dict[str, list[str]] = {
+    "healthcare": ["hospital", "doctor", "clinic", "ambulance", "health", "medicine",
+                   "अस्पताल", "डॉक्टर", "एम्बुलेंस", "स्वास्थ्य", "इलाज"],
+    "water": ["water", "tap", "pipeline", "well", "handpump", "पानी", "जल"],
+    "roads": ["road", "bridge", "pothole", "highway", "street", "सड़क", "रास्ता", "पुल"],
+    "education": ["school", "teacher", "classroom", "student", "स्कूल", "शिक्षक", "पढ़ाई"],
+    "electricity": ["power", "electricity", "voltage", "transformer", "बिजली"],
+    "sanitation": ["drain", "garbage", "toilet", "sewage", "waste", "सफाई", "कचरा", "नाली"],
+    "public_transport": ["bus", "train", "metro", "transport", "बस", "ट्रेन", "परिवहन"],
+    "digital_infrastructure": ["internet", "network", "mobile", "broadband", "इंटरनेट", "नेटवर्क", "मोबाइल"],
+    "housing": ["house", "housing", "shelter", "मकान", "आवास", "घर"],
+    "environment": ["pollution", "tree", "forest", "air", "smoke", "प्रदूषण", "पर्यावरण", "पेड़"],
 }
+
+_SEVERE_HINTS = ["urgent", "critical", "emergency", "dying", "बहुत", "गंभीर", "तुरंत",
+                 "एम्बुलेंस", "ambulance"]
+
+
+def _detect_language(text: str) -> str:
+    return "hi" if re.search(r"[\u0900-\u097F]", text) else "en"
 
 
 def _rule_based(text: str) -> dict:
     t = text.lower()
     scores = {c: sum(1 for k in ks if k in text or k in t) for c, ks in _KEYWORDS.items()}
-    category = max(scores, key=scores.get) if max(scores.values()) > 0 else "water"
-    severe = any(w in t for w in ["urgent", "critical", "emergency", "बहुत", "गंभीर"]) or "एम्बुलेंस" in text
+    best = max(scores, key=scores.get)
+    category = best if scores[best] > 0 else "other"
+    severity = "high" if any(w in t or w in text for w in _SEVERE_HINTS) else "medium"
     return {
         "category": category,
         "sub_category": f"{category}_access",
-        "severity": "high" if severe else "medium",
+        "severity": severity,
         "summary": text[:160],
-        "language": "hi" if re.search(r"[\u0900-\u097F]", text) else "en",
+        "language": _detect_language(text),
         "confidence": 0.55,
         "extractor": "rule_fallback",
     }
 
 
-def extract_signal(text: str) -> dict:
-    """Phase 4 will call Gemini here when GEMINI_API_KEY is set. Same schema either way."""
+def _gemini_extract(text: str) -> Optional[dict]:
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
-        return _rule_based(text)
+        return None
     try:
         import google.generativeai as genai
+
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = (
-            "Extract a civic issue as JSON with keys: category (one of healthcare,water,roads,"
-            "education,electricity,sanitation), sub_category, severity (low|medium|high|critical), "
-            f"summary (<=25 words), language (ISO code). Text: {text}. Reply JSON only."
+        model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+        model = genai.GenerativeModel(model_name, system_instruction=SYSTEM_INSTRUCTION)
+        resp = model.generate_content(
+            f"{EXTRACTION_SCHEMA}\nCitizen text: {text}",
+            generation_config={"response_mime_type": "application/json"},
         )
-        resp = model.generate_content(prompt)
-        import json
-        data = json.loads(resp.text.strip().strip('`').replace('json\n', ''))
-        data.setdefault("confidence", 0.8)
-        data["extractor"] = "gemini"
-        if data.get("category") not in CATEGORIES:
-            return _rule_based(text)
-        return data
-    except Exception:
-        return _rule_based(text)
+        data = json.loads(resp.text.strip().strip("`").replace("json\n", ""))
+        validated = ExtractedSignal(**data)
+        out = validated.model_dump()
+        out["extractor"] = "gemini"
+        return out
+    except (ValidationError, ValueError, KeyError, AttributeError) as e:
+        log.warning("Gemini output failed validation, using fallback: %s", e)
+        return None
+    except Exception as e:  # API/network failure: never break ingestion
+        log.warning("Gemini API failure, using fallback: %s", e)
+        return None
+
+
+def extract_signal(text: str, state: Optional[str] = None,
+                   district: Optional[str] = None,
+                   locality: Optional[str] = None) -> dict:
+    """Extract structured civic signal. Location always comes from caller metadata."""
+    result = _gemini_extract(text) or _rule_based(text)
+    result["state"] = state
+    result["district"] = district
+    result["locality"] = locality
+    return result
