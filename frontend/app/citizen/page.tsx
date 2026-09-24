@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -43,6 +43,51 @@ export default function CitizenPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signal, setSignal] = useState<Signal | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+
+  async function startRecording() {
+    setError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+      rec.onstop = () => transcribe(new Blob(chunksRef.current, { type: rec.mimeType }));
+      rec.start();
+      recorderRef.current = rec;
+      setRecording(true);
+    } catch {
+      setError("Microphone unavailable. Please allow access or type your request.");
+    }
+  }
+
+  function stopRecording() {
+    recorderRef.current?.stop();
+    recorderRef.current?.stream.getTracks().forEach((t) => t.stop());
+    setRecording(false);
+  }
+
+  async function transcribe(blob: Blob) {
+    setTranscribing(true);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append("file", blob, "request.webm");
+      const res = await fetch(`${API_URL}/api/v1/citizen/voice`, { method: "POST", body: form });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.detail ?? "Voice transcription failed. Please type your request.");
+      setText(data.transcript);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Voice transcription failed. Please type your request.");
+    } finally {
+      setTranscribing(false);
+    }
+  }
 
   async function submit() {
     setError(null);
@@ -115,6 +160,23 @@ export default function CitizenPage() {
         placeholder="e.g. हमारे गांव में अस्पताल बहुत दूर है…"
         disabled={loading}
       />
+
+      <div className="mt-3 flex items-center gap-3">
+        {!recording ? (
+          <button
+            className="rounded-md border px-4 py-2 text-sm disabled:opacity-50"
+            onClick={startRecording}
+            disabled={loading || transcribing}
+          >
+            🎤 Record voice instead
+          </button>
+        ) : (
+          <button className="rounded-md bg-red-700 px-4 py-2 text-sm text-white" onClick={stopRecording}>
+            ⏹ Stop recording…
+          </button>
+        )}
+        {transcribing && <span className="text-sm text-zinc-500">Transcribing…</span>}
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>

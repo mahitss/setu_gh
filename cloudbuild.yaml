@@ -1,0 +1,28 @@
+# Cloud Run deployment (backend + frontend). Set PROJECT_ID first.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, gcr.io/$PROJECT_ID/jansetu-backend, ./backend]
+  - name: gcr.io/cloud-builders/docker
+    args: [push, gcr.io/$PROJECT_ID/jansetu-backend]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run deploy jansetu-backend
+      - --image=gcr.io/$PROJECT_ID/jansetu-backend
+      - --platform=managed --region=asia-south1 --allow-unauthenticated
+      - --set-env-vars=GEMINI_API_KEY=$_GEMINI_API_KEY,DATABASE_URL=$_DATABASE_URL
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, gcr.io/$PROJECT_ID/jansetu-frontend, ./frontend]
+  - name: gcr.io/cloud-builders/docker
+    args: [push, gcr.io/$PROJECT_ID/jansetu-frontend]
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run deploy jansetu-frontend
+      - --image=gcr.io/$PROJECT_ID/jansetu-frontend
+      - --platform=managed --region=asia-south1 --allow-unauthenticated
+      - --set-env-vars=NEXT_PUBLIC_API_URL=$_API_URL
+substitutions:
+  _GEMINI_API_KEY: ""
+  _DATABASE_URL: ""
+  _API_URL: ""
