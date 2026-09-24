@@ -46,16 +46,32 @@ export type PulseItem = {
   current_count: number;
   previous_count: number;
   trend_percent: number | null;
-  status: "ok" | "insufficient_data";
+  status: "rising" | "stable" | "declining" | "insufficient_data";
   recent_30d: number;
   prior: number;
   growth_pct: number | null;
+};
+
+export type EmergingHotspot = {
+  id: string;
+  state: string;
+  district: string;
+  category: string;
+  current_count: number;
+  previous_count: number;
+  trend_percent: number;
 };
 
 export type HotspotDetail = {
   hotspot: Hotspot;
   evidence: Record<string, unknown>;
   recommendation: string;
+  recommendation_structured?: {
+    intervention: string;
+    confidence: number;
+    confidence_label: string;
+  };
+  explanation_source?: string;
   note: string;
 };
 

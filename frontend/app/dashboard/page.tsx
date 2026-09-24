@@ -5,7 +5,7 @@ import Link from "next/link";
 import Map from "@/components/Map";
 import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
-import type { Hotspot, PulseItem, Summary } from "@/lib/api";
+import type { EmergingHotspot, Hotspot, PulseItem, Summary } from "@/lib/api";
 
 const CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"];
 const PRIORITIES = ["critical", "high", "medium", "low", "minimal"];
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [pulse, setPulse] = useState<PulseItem[]>([]);
+  const [emerging, setEmerging] = useState<EmergingHotspot[]>([]);
   const [states, setStates] = useState<string[]>([]);
   const [fState, setFState] = useState("");
   const [fDistrict, setFDistrict] = useState("");
@@ -82,12 +83,13 @@ export default function DashboardPage() {
     const ctrl = new AbortController();
     Promise.all([
       apiGet<Summary>("/api/v1/dashboard/summary", ctrl.signal),
-      apiGet<{ pulse: PulseItem[] }>("/api/v1/civic-pulse", ctrl.signal),
+      apiGet<{ pulse: PulseItem[]; emerging_hotspots: EmergingHotspot[] }>("/api/v1/civic-pulse", ctrl.signal),
       apiGet<{ hotspots: Hotspot[] }>("/api/v1/hotspots?limit=100", ctrl.signal),
     ])
       .then(([s, p, h]) => {
         setSummary(s);
         setPulse(p.pulse);
+        setEmerging(p.emerging_hotspots ?? []);
         setHotspots(h.hotspots.slice(0, 50));
         setStates([...new Set(h.hotspots.map((x) => x.state))].sort());
       })
@@ -211,13 +213,30 @@ export default function DashboardPage() {
             {p.status === "insufficient_data" ? (
               <p className="mt-1 text-sm text-zinc-500">insufficient_data — not enough history yet</p>
             ) : (
-              <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
-                {trendLabel(p.trend_percent)}
-              </p>
+              <>
+                <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
+                  {trendLabel(p.trend_percent)}
+                </p>
+                <p className="mt-1 inline-block rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
+                  {title(p.status)}
+                </p>
+              </>
             )}
             <p className="mt-1 text-sm text-zinc-500">{fmtInt(p.current_count)} signals (30d)</p>
           </div>
         ))}
+      </div>
+
+      <h2 className="mt-10 text-xl font-semibold">Emerging hotspots</h2>
+      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
+        {emerging.map((e) => (
+          <Link key={e.id} href={`/hotspots/${encodeURIComponent(e.id)}`} className="rounded-md border p-4 hover:bg-zinc-50">
+            <p className="font-medium">{e.district}, {e.state}</p>
+            <p className="text-sm text-zinc-600">{title(e.category)}</p>
+            <p className="mt-1 text-xl font-semibold text-red-700">↑ {e.trend_percent}%</p>
+          </Link>
+        ))}
+        {emerging.length === 0 && <p className="text-sm text-zinc-500">No emerging hotspots right now.</p>}
       </div>
 
       <h2 className="mt-10 text-xl font-semibold">Ask in plain English</h2>

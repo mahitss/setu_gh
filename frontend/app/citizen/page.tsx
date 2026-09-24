@@ -38,6 +38,8 @@ const title = (s: string) =>
 
 export default function CitizenPage() {
   const [text, setText] = useState("");
+  const [lang, setLang] = useState("auto");
+  const [voiceLang, setVoiceLang] = useState("hi-IN");
   const [state, setState] = useState("Uttar Pradesh");
   const [district, setDistrict] = useState("Lucknow");
   const [locality, setLocality] = useState("");
@@ -79,6 +81,7 @@ export default function CitizenPage() {
     try {
       const form = new FormData();
       form.append("file", blob, "request.webm");
+      form.append("language_code", voiceLang);
       const res = await fetch(`${API_URL}/api/v1/citizen/voice`, { method: "POST", body: form });
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.detail ?? "Voice transcription failed. Please type your request.");
@@ -106,7 +109,7 @@ export default function CitizenPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: text.trim(),
-          language: "auto",
+          language: lang,
           state,
           district,
           locality: locality.trim() || null,
@@ -152,6 +155,17 @@ export default function CitizenPage() {
       <label className="mt-8 block text-sm font-medium" htmlFor="issue">
         Describe the issue…
       </label>
+      <div className="mt-2 flex items-center gap-2 text-sm">
+        <label htmlFor="lang">Language</label>
+        <select id="lang" className="rounded-md border p-1.5" value={lang} onChange={(e) => setLang(e.target.value)} disabled={loading}>
+          <option value="auto">Auto-detect</option>
+          <option value="hi">Hindi</option>
+          <option value="en">English</option>
+          <option value="bn">Bengali</option>
+          <option value="mr">Marathi</option>
+          <option value="kn">Kannada</option>
+        </select>
+      </div>
       <textarea
         id="issue"
         className="mt-2 w-full rounded-md border p-3"
@@ -162,7 +176,15 @@ export default function CitizenPage() {
         disabled={loading}
       />
 
-      <div className="mt-3 flex items-center gap-3">
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <label className="text-sm" htmlFor="voice-lang">Voice language</label>
+        <select id="voice-lang" className="rounded-md border p-1.5 text-sm" value={voiceLang} onChange={(e) => setVoiceLang(e.target.value)} disabled={loading || recording || transcribing}>
+          <option value="hi-IN">Hindi</option>
+          <option value="en-IN">English (India)</option>
+          <option value="bn-IN">Bengali</option>
+          <option value="mr-IN">Marathi</option>
+          <option value="kn-IN">Kannada</option>
+        </select>
         {!recording ? (
           <button
             className="rounded-md border px-4 py-2 text-sm disabled:opacity-50"

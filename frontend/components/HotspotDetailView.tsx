@@ -83,8 +83,24 @@ export default function HotspotDetailView({ detail }: { detail: HotspotDetail })
         ))}
       </ul>
 
-      <h2 className="mt-8 text-xl font-semibold">Recommendation</h2>
-      <p className="mt-2 rounded-md border p-4">{detail.recommendation}</p>
+      <h2 className="mt-8 text-xl font-semibold">Development Recommendation</h2>
+      <section className="mt-3 rounded-md border p-5">
+        <p className="text-lg font-semibold">{detail.recommendation_structured?.intervention ?? detail.recommendation}</p>
+        <h3 className="mt-4 text-sm font-semibold tracking-wide text-zinc-500">WHY?</h3>
+        <ul className="mt-2 space-y-1.5 text-sm">
+          <li>✓ {fmtInt(h.signals)} citizen signals</li>
+          <li>✓ {fmtInt(h.population)} people affected</li>
+          <li>✓ Infrastructure gap: {h.gap_index != null ? `${Math.round(h.gap_index * 100)}%` : "—"}</li>
+          <li>{h.trend_pct == null ? "○ Demand history still building" : `↑ Demand ${h.trend_pct >= 0 ? "increased" : "changed"} ${h.trend_pct >= 0 ? "+" : ""}${h.trend_pct}%`}</li>
+        </ul>
+        <p className="mt-2 text-sm text-zinc-600">{detail.recommendation}</p>
+        <p className="mt-3 text-xs text-zinc-500">
+          Prototype analysis based on available demo/public data. Confidence{" "}
+          {detail.recommendation_structured
+            ? `${detail.recommendation_structured.confidence.toFixed(2)} (${detail.recommendation_structured.confidence_label})`
+            : "is system-estimated"}.
+        </p>
+      </section>
       <p className="mt-2 text-xs text-zinc-500">{detail.note}</p>
     </main>
   );
