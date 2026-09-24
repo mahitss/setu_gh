@@ -186,3 +186,47 @@ def test_integration_input_to_dashboard():
     client.post("/api/v1/citizen/signals", json={"text": "Power cuts 8 hours daily in our ward"})
     after = client.get("/api/v1/dashboard/summary").json()["total_signals"]
     assert after == before + 1
+
+
+# --- Phase 10: voice ---
+
+def test_voice_rejects_empty_audio():
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.webm", b"", "audio/webm")})
+    assert r.status_code == 400
+
+
+def test_voice_graceful_without_credentials(monkeypatch):
+    monkeypatch.delenv("GOOGLE_APPLICATION_CREDENTIALS", raising=False)
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.webm", b"\x00" * 100, "audio/webm")})
+    # 501 = STT not configured here; 422 = creds exist but gibberish unrecognized. Never 500.
+    assert r.status_code in (501, 422)
+
+
+def test_voice_mocked_transcript(monkeypatch):
+    import app.routers.voice as voice_mod
+    monkeypatch.setattr(voice_mod, "_transcribe", lambda audio, lang: "पानी नहीं आ रहा है")
+    r = client.post("/api/v1/citizen/voice", files={"file": ("a.webm", b"\x00" * 100, "audio/webm")})
+    assert r.status_code == 200 and r.json()["success"] is True
+    # transcript feeds the normal text pipeline identically
+    r2 = client.post("/api/v1/citizen/signals", json={"text": r.json()["transcript"]})
+    assert r2.json()["signal"]["category"] == "water"
+
+
+# --- Natural-language policy query (allowlisted) ---
+
+def test_policy_query_filters():
+    r = client.get("/api/v1/policy-query",
+                   params={"category": "healthcare", "min_gap": 0.5, "min_signals": 20})
+    assert r.status_code == 200
+    for m in r.json()["matches"]:
+        assert m["category"] == "healthcare" and (m["gap_index"] or 0) >= 0.5 and m["signals"] >= 20
+
+
+def test_policy_query_rejects_bad_category():
+    assert client.get("/api/v1/policy-query", params={"category": "teleportation"}).status_code == 422
+
+
+def test_simulate_validates_budget():
+    assert client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": -5}).status_code == 422
+    r = client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": 100})
+    assert r.status_code == 200 and "projected_population_reached" in r.json()

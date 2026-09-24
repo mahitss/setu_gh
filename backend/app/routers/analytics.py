@@ -1,9 +1,10 @@
 """Dashboard + hotspots + pulse + recommendations + simulate.
 Deterministic aggregations over seeded/demo data (Phase 6/7/9/11/12 fleshed out later)."""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from typing import Literal, Optional
 from ..database import get_db
 from ..models import CitizenSignal, Demographic, Infrastructure, Investment
 from ..schemas import SimulateIn
@@ -103,3 +104,33 @@ def simulate_ep(payload: SimulateIn, db: Session = Depends(get_db)):
     hi = [r for r in cat_rows if (r["gap_index"] or 0) >= 0.5]
     avg_pop = int(sum(r["population"] for r in hi) / max(1, len(hi))) if hi else 100000
     return simulate(payload.sector, payload.budget_cr, len(hi), avg_pop)
+
+
+# --- Natural-language-policy-query backend (allowlisted; LLM never touches SQL) ---
+CategoryQ = Literal["healthcare", "education", "roads", "water", "sanitation",
+                    "electricity", "public_transport", "digital_infrastructure",
+                    "housing", "environment", "other"]
+
+
+@router.get("/policy-query")
+def policy_query(
+    db: Session = Depends(get_db),
+    category: Optional[CategoryQ] = Query(default=None),
+    min_gap: float = Query(default=0.0, ge=0.0, le=1.0),
+    min_signals: int = Query(default=0, ge=0),
+    max_investment_cr: Optional[float] = Query(default=None, gt=0),
+):
+    """E.g. high healthcare demand + low investment. All params allowlisted/validated."""
+    rows = _hotspot_rows(db)
+    out = []
+    for r in rows:
+        if category and r["category"] != category:
+            continue
+        if (r["gap_index"] or 0) < min_gap:
+            continue
+        if r["signals"] < min_signals:
+            continue
+        if max_investment_cr is not None and r["investment_inr"] > max_investment_cr * 1e7:
+            continue
+        out.append(r)
+    return {"matches": out[:50], "count": len(out)}
