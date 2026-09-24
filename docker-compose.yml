@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    volumes:
+      - ./backend:/app
+  # Postgres for prod-parity (prototype defaults to SQLite via DATABASE_URL).
+  # Uncomment for local Postgres:
+  # db:
+  #   image: postgres:16
+  #   environment:
+  #     POSTGRES_DB: jansetu
+  #     POSTGRES_USER: jansetu
+  #     POSTGRES_PASSWORD: jansetu
+  #   ports:
+  #     - "5432:5432"

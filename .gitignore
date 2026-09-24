@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+# Node
+node_modules/
+.next/
+# Env / secrets
+.env
+*.pem
+*.key
+# Data / local DB
+*.db
+*.sqlite*
+data/*.csv
+# OS
+.DS_Store
+Thumbs.db

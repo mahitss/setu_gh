@@ -1,0 +1,10 @@
+# API
+GET /api/v1/health — liveness.
+POST /api/v1/citizen/signals {raw_text, language?, state?, district?, locality?, lat?, lon?} — ingest.
+POST /api/v1/citizen/voice — Phase 10 stub.
+GET /api/v1/dashboard/summary — KPIs + top hotspots.
+GET /api/v1/hotspots — ranked deterministic hotspots with factors.
+GET /api/v1/hotspots/{state}/{district}/{category} — evidence + recommendation.
+GET /api/v1/civic-pulse — 30d vs prior growth per category.
+GET /api/v1/recommendations — top 10.
+POST /api/v1/simulate {sector, budget_cr} — deterministic estimates.
