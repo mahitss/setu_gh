@@ -311,3 +311,43 @@ def test_hotspot_scores_deterministic_across_calls():
     a = client.get("/api/v1/hotspots").json()
     b = client.get("/api/v1/hotspots").json()
     assert a == b
+
+
+def test_short_id_route_matches_by_id():
+    h = client.get("/api/v1/hotspots").json()["hotspots"][0]
+    r = client.get(f"/api/v1/hotspots/{h['id']}")
+    assert r.status_code == 200
+    assert r.json()["location"] == {"state": h["state"], "district": h["district"]}
+
+
+def test_recommendations_persisted_and_upserted():
+    r1 = client.get("/api/v1/recommendations").json()["recommendations"]
+    assert len(r1) == 10 and all("id" in r for r in r1)
+    db = TestingSession()
+    n1 = db.query(models.Recommendation).count()
+    assert n1 == 10
+    rec = db.query(models.Recommendation).first()
+    assert rec.evidence and rec.recommendation and rec.population_affected > 0
+    db.close()
+    client.get("/api/v1/recommendations")
+    db = TestingSession()
+    assert db.query(models.Recommendation).count() == n1  # upsert, no duplicates
+    db.close()
+
+
+def test_explanation_template_without_key(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    from app.services.gemini import explain_recommendation
+    text, source = explain_recommendation("Bihar", "Gaya", "water", {"signals": 50, "gap_index": 0.8})
+    assert source == "template" and "Gaya" in text
+
+
+def test_nl_policy_query():
+    r = client.post("/api/v1/policy-query/nl",
+                    json={"question": "Which districts have high healthcare demand but low existing investment?"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["filters"]["category"] == "healthcare"
+    assert body["filters"]["max_investment_cr"] == 30.0
+    assert all(m["category"] == "healthcare" for m in body["matches"])
+    assert client.post("/api/v1/policy-query/nl", json={"question": "hi"}).status_code == 422

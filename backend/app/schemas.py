@@ -54,3 +54,18 @@ class SignalResponse(BaseModel):
 class SimulateIn(BaseModel):
     sector: str = Field(min_length=2, max_length=64)
     budget_cr: float = Field(gt=0, le=100000, description="Budget in INR crore")
+
+
+class PolicyQueryFilters(BaseModel):
+    """Allowlisted structured filters. The LLM may propose them; Pydantic disposes."""
+
+    category: Optional[str] = Field(default=None, pattern="^(healthcare|education|roads|water|sanitation|electricity|public_transport|digital_infrastructure|housing|environment|other)$")
+    state: Optional[str] = Field(default=None, max_length=128)
+    district: Optional[str] = Field(default=None, max_length=128)
+    min_gap: float = Field(default=0.0, ge=0.0, le=1.0)
+    min_signals: int = Field(default=0, ge=0)
+    max_investment_cr: Optional[float] = Field(default=None, gt=0)
+
+
+class NLQueryIn(BaseModel):
+    question: str = Field(min_length=3, max_length=500)

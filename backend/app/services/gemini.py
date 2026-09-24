@@ -156,3 +156,36 @@ def extract_signal(text: str, state: Optional[str] = None,
     result["district"] = district
     result["locality"] = locality
     return result
+
+
+def explain_recommendation(state: str, district: str, category: str, evidence: dict) -> tuple[str, str]:
+    """Natural-language explanation grounded ONLY on backend-computed evidence.
+
+    Returns (text, source). Without a key, or on any failure, returns the
+    deterministic template so the endpoint never breaks.
+    """
+    template = (f"Improve {category} access and supporting services in {district}, {state}: "
+                f"{evidence.get('signals')} citizen signals, gap index {evidence.get('gap_index')}.")
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        return template, "template"
+    try:
+        import google.generativeai as genai
+
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(
+            os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+            system_instruction=(
+                "Explain a civic development recommendation using ONLY the provided "
+                "evidence numbers. Do not invent facts, places, or statistics. "
+                "Max 60 words. Plain text, no markdown."))
+        resp = model.generate_content(
+            f"Evidence: {json.dumps(evidence)}. "
+            f"Explain why {category} in {district}, {state} is flagged.")
+        text = (resp.text or "").strip()
+        if not text:
+            raise ValueError("empty explanation")
+        return text[:600], "gemini"
+    except Exception as e:
+        log.warning("Gemini explanation failed, using template: %s", e)
+        return template, "template"

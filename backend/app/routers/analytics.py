@@ -1,17 +1,22 @@
 """Dashboard + hotspots + pulse + recommendations + simulate + policy query.
 All aggregations are deterministic (services/hotspot_engine.py); empty DB returns zeros."""
+import json
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import Literal, Optional
 from ..database import get_db
-from ..models import CitizenSignal, Demographic
-from ..schemas import SimulateIn
+from ..models import CitizenSignal, Demographic, Infrastructure, Investment, Recommendation
+from ..schemas import NLQueryIn, PolicyQueryFilters, SimulateIn
 from ..services.engine import simulate
+from ..services.gemini import explain_recommendation
 from ..services.hotspot_engine import (
-    MODEL_NOTE, hotspot_rows, parse_hotspot_id, pulse_rows, top_categories,
+    MODEL_NOTE, hotspot_id, hotspot_rows, parse_hotspot_id, pulse_rows, top_categories,
 )
+from ..services.nl_query import parse_question
 
+log = logging.getLogger("jansetu.analytics")
 router = APIRouter()
 
 CategoryQ = Literal["healthcare", "education", "roads", "water", "sanitation",
@@ -67,11 +72,14 @@ def _detail(state: str, district: str, category: str, db: Session) -> dict:
         raise HTTPException(status_code=404, detail="Hotspot not found")
     r = rows[0]
     demo = db.query(Demographic).filter_by(state=state, district=district).first()
-    from ..models import Infrastructure, Investment
     infra = db.query(Infrastructure).filter_by(state=state, district=district, category=category).first()
     active = db.query(func.count(Investment.id)).filter(
         Investment.state == state, Investment.district == district,
         Investment.category == category, Investment.status == "ongoing").scalar() or 0
+    evidence = {"signals": r["signals"], "recent_30d": r["recent_30d"], "population": r["population"],
+                "gap_index": r["gap_index"], "investment_inr": r["investment_inr"],
+                "factors": r["factors"]}
+    rec_text, rec_source = explain_recommendation(state, district, category, evidence)
     return {
         "location": {"state": state, "district": district},
         "category": category,
@@ -86,11 +94,9 @@ def _detail(state: str, district: str, category: str, db: Session) -> dict:
         "priority": {"demand_index": r["demand_index"], "priority_score": r["priority_score"],
                      "level": r["priority_level"], "model_note": MODEL_NOTE},
         "hotspot": r,
-        "evidence": {"signals": r["signals"], "recent_30d": r["recent_30d"], "population": r["population"],
-                     "gap_index": r["gap_index"], "investment_inr": r["investment_inr"],
-                     "factors": r["factors"]},
-        "recommendation": f"Prioritize {category} in {district}, {state}: "
-                          f"{r['signals']} signals, gap {r['gap_index']}.",
+        "evidence": evidence,
+        "recommendation": rec_text,
+        "explanation_source": rec_source,
         "note": "Prototype priority analysis. Metrics deterministic; wording explanatory.",
     }
 
@@ -108,6 +114,15 @@ def hotspot_detail(state: str, district: str, category: str, db: Session = Depen
     return _detail(state, district, category, db)
 
 
+@router.get("/hotspots/{hotspot_id}")
+def hotspot_by_short_id(hotspot_id: str, db: Session = Depends(get_db)):
+    """Literal /hotspots/{id} lookup (stable base64 id from the hotspot list)."""
+    parsed = parse_hotspot_id(hotspot_id)
+    if not parsed:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    return _detail(*parsed, db)
+
+
 @router.get("/civic-pulse")
 def pulse(db: Session = Depends(get_db)):
     return {"pulse": pulse_rows(db)}
@@ -115,13 +130,32 @@ def pulse(db: Session = Depends(get_db)):
 
 @router.get("/recommendations")
 def recommendations(db: Session = Depends(get_db)):
+    """Top-10 computed live AND persisted (upsert) to the recommendations table."""
     rows = hotspot_rows(db)[:10]
-    return {"recommendations": [
-        {"state": r["state"], "district": r["district"], "category": r["category"],
-         "evidence": {"signals": r["signals"], "population": r["population"], "gap_index": r["gap_index"],
-                      "investment_inr": r["investment_inr"], "factors": r["factors"]},
-         "recommendation": f"Improve {r['category']} access in {r['district']}.",
-         "priority_score": r["priority_score"]} for r in rows]}
+    out = []
+    for r in rows:
+        ev = {"signals": r["signals"], "population": r["population"], "gap_index": r["gap_index"],
+              "investment_inr": r["investment_inr"], "factors": r["factors"]}
+        rec_text, _ = explain_recommendation(r["state"], r["district"], r["category"], ev)
+        existing = db.query(Recommendation).filter_by(
+            state=r["state"], district=r["district"], category=r["category"]).first()
+        if existing:
+            existing.evidence = json.dumps(ev)
+            existing.recommendation = rec_text
+            existing.population_affected = r["population"]
+            existing.confidence = r["priority_score"]
+            rec_id = existing.id
+        else:
+            rec = Recommendation(state=r["state"], district=r["district"], category=r["category"],
+                                 evidence=json.dumps(ev), recommendation=rec_text,
+                                 population_affected=r["population"], confidence=r["priority_score"])
+            db.add(rec)
+            db.flush()
+            rec_id = rec.id
+        out.append({"id": rec_id, "state": r["state"], "district": r["district"], "category": r["category"],
+                    "evidence": ev, "recommendation": rec_text, "priority_score": r["priority_score"]})
+    db.commit()
+    return {"recommendations": out}
 
 
 @router.post("/simulate")
@@ -155,3 +189,41 @@ def policy_query(
             continue
         out.append(r)
     return {"matches": out[:50], "count": len(out)}
+
+
+def _apply_policy_filters(db: Session, f: PolicyQueryFilters) -> list[dict]:
+    rows = hotspot_rows(db)
+    out = []
+    for r in rows:
+        if f.category and r["category"] != f.category:
+            continue
+        if f.state and r["state"] != f.state:
+            continue
+        if f.district and r["district"] != f.district:
+            continue
+        if (r["gap_index"] or 0) < f.min_gap:
+            continue
+        if r["signals"] < f.min_signals:
+            continue
+        if f.max_investment_cr is not None and r["investment_inr"] > f.max_investment_cr * 1e7:
+            continue
+        out.append({"id": hotspot_id(r["state"], r["district"], r["category"]),
+                    "state": r["state"], "district": r["district"], "category": r["category"],
+                    "signals": r["signals"], "gap_index": r["gap_index"],
+                    "investment_inr": r["investment_inr"], "priority_score": r["priority_score"],
+                    "priority_level": r["priority_level"]})
+    return out
+
+
+@router.post("/policy-query/nl")
+def policy_query_nl(payload: NLQueryIn, db: Session = Depends(get_db)):
+    """Policymaker asks in English; backend parses to allowlisted filters and executes."""
+    parsed = parse_question(payload.question, db)
+    try:
+        filters = PolicyQueryFilters(**parsed["filters"])
+    except Exception:
+        log.warning("NL filters failed validation, using empty filter")
+        filters = PolicyQueryFilters()
+    matches = _apply_policy_filters(db, filters)
+    return {"question": payload.question, "filters": filters.model_dump(exclude_none=True),
+            "source": parsed["source"], "matches": matches[:20], "count": len(matches)}
