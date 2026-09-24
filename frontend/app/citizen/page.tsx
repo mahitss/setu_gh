@@ -2,17 +2,9 @@
 
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { STATE_DISTRICTS } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-const STATE_DISTRICTS: Record<string, string[]> = {
-  "Uttar Pradesh": ["Lucknow", "Varanasi", "Kanpur Nagar", "Gorakhpur"],
-  Bihar: ["Patna", "Gaya", "Muzaffarpur", "Bhagalpur"],
-  Maharashtra: ["Mumbai Suburban", "Pune", "Nagpur", "Nashik"],
-  Karnataka: ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Kalaburagi"],
-  Rajasthan: ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
-  "West Bengal": ["Kolkata", "Howrah", "Darjeeling", "Nadia"],
-};
 
 const LANGUAGE_NAMES: Record<string, string> = {
   hi: "Hindi",

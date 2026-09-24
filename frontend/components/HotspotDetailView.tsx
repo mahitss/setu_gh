@@ -34,19 +34,32 @@ export default function HotspotDetailView({ detail }: { detail: HotspotDetail })
   ];
   const evidence: [string, string][] = [
     ["Citizen signals", fmtInt(h.signals)],
-    ["Signals (last 30d)", fmtInt(h.recent_30d)],
-    ["Population", fmtInt(h.population)],
-    ["Infrastructure gap", h.gap_index?.toFixed(2) ?? "—"],
+    ["Recent demand (30d)", fmtInt(h.recent_30d)],
+    ["Previous period", fmtInt(Math.max(0, h.signals - h.recent_30d))],
+    ["Population affected", fmtInt(h.population)],
+    ["Infrastructure coverage", detail.infrastructure?.coverage_index != null ? `${Math.round(detail.infrastructure.coverage_index * 100)}%` : "—"],
+    ["Existing facilities", detail.infrastructure?.facility_count != null ? fmtInt(detail.infrastructure.facility_count) : "—"],
     ["Existing investment", fmtInr(h.investment_inr)],
     ["Priority score", h.priority_score.toFixed(2)],
   ];
+  const simHref = `/simulate?state=${encodeURIComponent(h.state)}&district=${encodeURIComponent(h.district)}&category=${encodeURIComponent(h.category)}`;
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
       <Link href="/dashboard" className="text-sm underline">← Dashboard</Link>
-      <h1 className="mt-2 text-3xl font-semibold">
-        {title(h.category)} in {h.district}, {h.state}
-      </h1>
+      <p className="mt-4 text-sm font-semibold tracking-widest text-zinc-500">{h.district.toUpperCase()} DISTRICT</p>
+      <h1 className="mt-1 text-3xl font-semibold">{title(h.category)} Access</h1>
+      <p className="mt-2 inline-block rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+        {title(h.priority_level)} demand
+      </p>
+      <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+        <div className="rounded-md border p-3"><dt className="text-zinc-500">Demand trend</dt>
+          <dd className="mt-1 text-lg font-semibold">{h.trend_pct == null ? "new" : `↑ ${h.trend_pct >= 0 ? "+" : ""}${h.trend_pct}%`}</dd></div>
+        <div className="rounded-md border p-3"><dt className="text-zinc-500">Population affected</dt>
+          <dd className="mt-1 text-lg font-semibold">{fmtInt(h.population)}</dd></div>
+        <div className="rounded-md border p-3"><dt className="text-zinc-500">Infrastructure gap</dt>
+          <dd className="mt-1 text-lg font-semibold">{h.gap_index != null ? `${Math.round(h.gap_index * 100)}%` : "—"}</dd></div>
+      </dl>
       <p className="mt-2 inline-block rounded bg-zinc-100 px-2 py-1 text-xs font-medium text-zinc-600">
         Prototype priority analysis — {title(h.priority_level)} priority
       </p>
@@ -100,6 +113,9 @@ export default function HotspotDetailView({ detail }: { detail: HotspotDetail })
             ? `${detail.recommendation_structured.confidence.toFixed(2)} (${detail.recommendation_structured.confidence_label})`
             : "is system-estimated"}.
         </p>
+        <Link href={simHref} className="mt-4 inline-block rounded-md bg-black px-5 py-2.5 text-sm text-white">
+          Simulate investment
+        </Link>
       </section>
       <p className="mt-2 text-xs text-zinc-500">{detail.note}</p>
     </main>

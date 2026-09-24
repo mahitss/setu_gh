@@ -52,8 +52,43 @@ class SignalResponse(BaseModel):
 
 
 class SimulateIn(BaseModel):
-    sector: str = Field(min_length=2, max_length=64)
-    budget_cr: float = Field(gt=0, le=100000, description="Budget in INR crore")
+    """Two shapes (back-compatible):
+    aggregate: {sector, budget_cr} — category-wide estimates.
+    district: {state, district, category, budget|budget_cr, intervention?}."""
+
+    sector: Optional[str] = Field(default=None, min_length=2, max_length=64)
+    budget_cr: Optional[float] = Field(default=None, gt=0, le=100000)
+    state: Optional[str] = Field(default=None, max_length=128)
+    district: Optional[str] = Field(default=None, max_length=128)
+    category: Optional[str] = Field(default=None, max_length=64)
+    budget: Optional[float] = Field(default=None, gt=0, le=1e13, description="Budget in INR")
+    intervention: Optional[str] = Field(default=None, max_length=64)
+
+    @model_validator(mode="after")
+    def _require_coherent_shape(self):
+        loc = [self.state, self.district, self.category]
+        if any(loc):
+            if not all(loc):
+                raise ValueError("state, district and category are required together")
+            if self.budget is None and self.budget_cr is None:
+                raise ValueError("budget (INR) or budget_cr is required")
+        else:
+            if not self.sector or (self.budget is None and self.budget_cr is None):
+                raise ValueError("sector and budget_cr (or budget) are required")
+        return self
+
+    def budget_inr(self) -> float:
+        if self.budget is not None:
+            return self.budget
+        return (self.budget_cr or 0) * 1e7
+
+
+class SimulateCompareIn(BaseModel):
+    state: str = Field(min_length=1, max_length=128)
+    district: str = Field(min_length=1, max_length=128)
+    category: str = Field(min_length=1, max_length=64)
+    intervention: Optional[str] = Field(default=None, max_length=64)
+    budgets_cr: list[float] = Field(min_length=1, max_length=5)
 
 
 class PolicyQueryFilters(BaseModel):

@@ -65,6 +65,8 @@ export type EmergingHotspot = {
 export type HotspotDetail = {
   hotspot: Hotspot;
   evidence: Record<string, unknown>;
+  infrastructure?: { facility_count: number | null; coverage_index: number | null; gap_index: number | null };
+  investment?: { total: number; active_projects: number };
   recommendation: string;
   recommendation_structured?: {
     intervention: string;
@@ -90,6 +92,15 @@ export function fmtInr(n: number): string {
   if (n >= 1e5) return `₹${(n / 1e5).toFixed(1)} L`;
   return `₹${inFmt.format(Math.round(n))}`;
 }
+
+export const STATE_DISTRICTS: Record<string, string[]> = {
+  "Uttar Pradesh": ["Lucknow", "Varanasi", "Kanpur Nagar", "Gorakhpur"],
+  Bihar: ["Patna", "Gaya", "Muzaffarpur", "Bhagalpur"],
+  Maharashtra: ["Mumbai Suburban", "Pune", "Nagpur", "Nashik"],
+  Karnataka: ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Kalaburagi"],
+  Rajasthan: ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+  "West Bengal": ["Kolkata", "Howrah", "Darjeeling", "Nadia"],
+};
 
 export const title = (s: string) =>
   s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

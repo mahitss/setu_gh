@@ -38,7 +38,19 @@ def setup_module(_):
 
 
 def test_health():
-    assert client.get("/api/v1/health").json()["status"] == "ok"
+    body = client.get("/api/v1/health").json()
+    assert body["status"] == "ok"
+    assert body["database"] == "up"
+    assert set(["ai_configured", "voice_configured"]) <= set(body)
+
+
+def test_rate_limiter_blocks_and_resets():
+    from app.services.rate_limit import FixedWindowLimiter
+    lim = FixedWindowLimiter(max_requests=2, window_seconds=60)
+    assert lim.allowed("k", now=1000.0) and lim.allowed("k", now=1001.0)
+    assert not lim.allowed("k", now=1002.0)
+    assert lim.allowed("k", now=2000.0)  # window expired
+    assert lim.allowed("other", now=1002.0)  # per-key isolation
 
 
 # --- Phase 3/5: ingestion contract ---
@@ -247,6 +259,61 @@ def test_simulate_validates_budget():
     assert client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": -5}).status_code == 422
     r = client.post("/api/v1/simulate", json={"sector": "healthcare", "budget_cr": 100})
     assert r.status_code == 200 and "projected_population_reached" in r.json()
+
+
+# --- Phase 12: district simulation engine ---
+
+def _sim(district="Lucknow", budget=100000000, **kw):
+    body = {"state": "Uttar Pradesh", "district": district, "category": "healthcare",
+            "budget": budget}
+    body.update(kw)
+    return client.post("/api/v1/simulate", json=body)
+
+
+def test_simulate_district_shape():
+    r = _sim()
+    assert r.status_code == 200
+    body = r.json()
+    assert set(["scenario", "baseline", "estimate", "assumptions"]) <= set(body)
+    assert body["scenario"]["intervention"] == "primary_healthcare"
+    assert "Scenario estimate" in body["label"]
+
+
+def test_simulate_monotonic_budgets():
+    r = client.post("/api/v1/simulate/compare", json={
+        "state": "Uttar Pradesh", "district": "Lucknow", "category": "healthcare",
+        "budgets_cr": [50, 100, 250]})
+    assert r.status_code == 200
+    body = r.json()
+    reaches = [x["population_reached"] for x in body["comparison"]]
+    assert reaches == sorted(reaches)  # more budget never reaches fewer people
+    assert "assumptions" in body and len(body["comparison"]) == 3
+
+
+def test_simulate_rejects_bad_input():
+    assert _sim(budget=0).status_code == 422
+    assert _sim(budget=-5).status_code == 422
+    # missing district alongside other location fields
+    assert client.post("/api/v1/simulate", json={
+        "state": "Uttar Pradesh", "category": "healthcare", "budget": 100}).status_code == 422
+    # unsupported category
+    assert _sim(category="teleportation").status_code == 422
+    # unknown intervention for a valid category
+    assert _sim(intervention="moon_base").status_code == 400
+    # unknown district baseline
+    assert _sim(district="Nowhere").status_code == 404
+
+
+def test_simulate_compare_validates():
+    bad = client.post("/api/v1/simulate/compare", json={
+        "state": "Uttar Pradesh", "district": "Lucknow", "category": "healthcare",
+        "budgets_cr": [100, -10]})
+    assert bad.status_code == 422
+
+
+def test_simulate_interventions_allowlisted():
+    body = client.get("/api/v1/simulate/interventions").json()["interventions"]
+    assert "primary_healthcare" in body["healthcare"] and "road_repair" in body["roads"]
 
 
 # --- Phase 6-8: dashboard / hotspot engine / pulse ---

@@ -8,13 +8,14 @@ from sqlalchemy import func
 from typing import Literal, Optional
 from ..database import get_db
 from ..models import CitizenSignal, Demographic, Infrastructure, Investment, Recommendation
-from ..schemas import NLQueryIn, PolicyQueryFilters, SimulateIn
+from ..schemas import NLQueryIn, PolicyQueryFilters, SimulateCompareIn, SimulateIn
 from ..services.engine import simulate
 from ..services.gemini import explain_recommendation, explain_structured
 from ..services.recommendation_engine import build_recommendation
 from ..services.hotspot_engine import (
     MODEL_NOTE, civic_pulse, hotspot_id, hotspot_rows, parse_hotspot_id, top_categories,
 )
+from ..services.simulation_engine import ASSUMPTIONS, INTERVENTIONS, LABEL, simulate_district
 from ..services.nl_query import parse_question
 
 log = logging.getLogger("jansetu.analytics")
@@ -189,11 +190,52 @@ def recommendations(db: Session = Depends(get_db)):
 
 @router.post("/simulate")
 def simulate_ep(payload: SimulateIn, db: Session = Depends(get_db)):
+    if payload.district:
+        if payload.category not in INTERVENTIONS:
+            raise HTTPException(status_code=422, detail=f"Unsupported category: {payload.category}")
+        if payload.intervention and payload.intervention not in INTERVENTIONS[payload.category]:
+            raise HTTPException(status_code=400,
+                                detail=f"Unsupported intervention for {payload.category}: {payload.intervention}")
+        out = simulate_district(db, payload.state or "", payload.district, payload.category,
+                                payload.budget_inr(), payload.intervention)
+        if out is None:
+            raise HTTPException(status_code=404, detail="No baseline data for this location/sector")
+        return out
     rows = hotspot_rows(db)
-    cat_rows = [r for r in rows if r["category"] == payload.sector.lower()]
+    cat_rows = [r for r in rows if r["category"] == (payload.sector or "").lower()]
     hi = [r for r in cat_rows if (r["gap_index"] or 0) >= 0.5]
     avg_pop = int(sum(r["population"] for r in hi) / max(1, len(hi))) if hi else 100000
-    return simulate(payload.sector, payload.budget_cr, len(hi), avg_pop)
+    return simulate(payload.sector or "other", (payload.budget_inr() / 1e7), len(hi), avg_pop)
+
+
+@router.get("/simulate/interventions")
+def simulate_interventions():
+    """Allowlisted category -> intervention mapping (LLM may not invent these)."""
+    return {"interventions": {c: sorted(v) for c, v in INTERVENTIONS.items()}}
+
+
+@router.post("/simulate/compare")
+def simulate_compare(payload: SimulateCompareIn, db: Session = Depends(get_db)):
+    """Same deterministic engine across budgets — comparison table."""
+    if payload.category not in INTERVENTIONS:
+        raise HTTPException(status_code=422, detail=f"Unsupported category: {payload.category}")
+    if payload.intervention and payload.intervention not in INTERVENTIONS[payload.category]:
+        raise HTTPException(status_code=400, detail="Unsupported intervention for this category")
+    for b in payload.budgets_cr:
+        if b <= 0:
+            raise HTTPException(status_code=422, detail="Budgets must be positive")
+    rows = []
+    for b in payload.budgets_cr:
+        out = simulate_district(db, payload.state, payload.district, payload.category,
+                                b * 1e7, payload.intervention)
+        if out is None:
+            raise HTTPException(status_code=404, detail="No baseline data for this location/sector")
+        e = out["estimate"]
+        rows.append({"budget_cr": b, "population_reached": e["population_reached"],
+                     "coverage_improvement": e["coverage_improvement"],
+                     "gap_reduction": e["gap_reduction"]})
+    return {"label": LABEL, "scenario": out["scenario"], "baseline": out["baseline"],
+            "comparison": rows, "assumptions": ASSUMPTIONS}
 
 
 @router.get("/policy-query")
