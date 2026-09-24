@@ -67,6 +67,7 @@ export type HotspotDetail = {
   evidence: Record<string, unknown>;
   infrastructure?: { facility_count: number | null; coverage_index: number | null; gap_index: number | null };
   investment?: { total: number; active_projects: number };
+  demographics?: { population: number; population_density: number | null };
   recommendation: string;
   recommendation_structured?: {
     intervention: string;
@@ -76,6 +77,25 @@ export type HotspotDetail = {
   explanation_source?: string;
   note: string;
 };
+
+export type RecommendationOut = {
+  recommendation: { intervention: string; confidence: number; confidence_label: string };
+  reasoning: string[];
+  evidence: { citizen_signals: number; population_affected: number; infrastructure_gap: number | null; demand_trend: number | null; existing_investment: number };
+  explanation: { summary: string; evidence_points: string[]; caveats: string[] };
+  explanation_source: string;
+};
+
+export type CompareRow = { budget_cr: number; population_reached: number; coverage_improvement: number; gap_reduction: number };
+
+export type CompareOut = {
+  label: string;
+  scenario: { intervention: string };
+  comparison: CompareRow[];
+  assumptions: string[];
+};
+
+export type NlMatch = { id: string; state: string; district: string; category: string; signals: number; gap_index: number | null };
 
 export async function apiGet<T>(path: string, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, { signal });

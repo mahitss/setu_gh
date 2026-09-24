@@ -176,7 +176,7 @@ export default function DashboardPage() {
       </p>
 
       {/* CIVICPULSE */}
-      <h2 className="mt-10 text-xl font-semibold">CivicPulse</h2>
+      <h2 id="civic-pulse" className="mt-10 text-xl font-semibold">CivicPulse</h2>
       <h2 className="mt-10 text-xl font-semibold">CivicPulse</h2>
       <p className="mt-1 text-sm text-zinc-500">Last 30 days vs prior 30 days.</p>
       {loading ? (

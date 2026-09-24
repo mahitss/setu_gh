@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { STATE_DISTRICTS, apiGet, fmtInt, title } from "@/lib/api";
@@ -45,6 +45,7 @@ function Simulator() {
 
   const options = interventions[sector] ?? [];
   const effectiveIntervention = options.includes(intervention) ? intervention : options[0] ?? "";
+  const autoCompared = useRef(false);
 
   async function run(cr: number) {
     setError(null);
@@ -87,6 +88,16 @@ function Simulator() {
       setError(e instanceof Error ? e.message : "Could not compare scenarios.");
     }
   }
+
+  useEffect(() => {
+    if (params.get("compare") === "1" && !autoCompared.current && effectiveIntervention) {
+      autoCompared.current = true;
+      void (async () => {
+        await runCompare();
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveIntervention]);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
