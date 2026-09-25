@@ -5,7 +5,7 @@ import Link from "next/link";
 import Map from "@/components/Map";
 import AskJanSetu from "@/components/AskJanSetu";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
-import type { EmergingHotspot, Hotspot, PulseItem, Summary } from "@/lib/api";
+import type { EmergingHotspot, Hotspot, PulseItem, Summary, TopCategory } from "@/lib/api";
 
 const CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"];
 const PRIORITIES = ["critical", "high", "medium", "low", "minimal"];
@@ -19,6 +19,15 @@ export type RecentSignal = {
   state: string;
   district: string;
   created_at: string | null;
+};
+
+type StateStat = {
+  state: string;
+  signals: number;
+  districts: number;
+  topCategory: string;
+  avgGap: number | null;
+  investment: number;
 };
 
 function whyBullets(h: Hotspot): [string, string][] {
@@ -47,6 +56,7 @@ export default function DashboardPage() {
   const [emerging, setEmerging] = useState<EmergingHotspot[]>([]);
   const [recent, setRecent] = useState<RecentSignal[]>([]);
   const [states, setStates] = useState<string[]>([]);
+  const [stateStats, setStateStats] = useState<StateStat[]>([]);
   const [fState, setFState] = useState("");
   const [fDistrict, setFDistrict] = useState("");
   const [fCategory, setFCategory] = useState("");
@@ -81,6 +91,12 @@ export default function DashboardPage() {
       });
   }
 
+  function selectState(s: string) {
+    setFState(s);
+    setFDistrict("");
+    refetch({ state: s, district: "", category: fCategory, priority: fPriority });
+  }
+
   useEffect(() => {
     const ctrl = new AbortController();
     Promise.all([
@@ -95,7 +111,34 @@ export default function DashboardPage() {
         setEmerging(p.emerging_hotspots ?? []);
         setHotspots(h.hotspots.slice(0, 50));
         setRecent(r.signals);
-        setStates([...new Set(h.hotspots.map((x) => x.state))].sort());
+        const st = [...new Set(h.hotspots.map((x) => x.state))].sort();
+        setStates(st);
+        // Exact per-state aggregates: a state has ≤24 groups, one filtered call covers it fully.
+        Promise.all(
+          st.map((x) =>
+            apiGet<{ hotspots: Hotspot[] }>(
+              `/api/v1/hotspots?${new URLSearchParams({ state: x, limit: "50" })}`, ctrl.signal
+            ).then((res) => {
+              const rows = res.hotspots;
+              const gaps = rows.map((g) => g.gap_index).filter((g): g is number => g != null);
+              const byCat: Record<string, number> = {};
+              rows.forEach((g) => {
+                byCat[g.category] = (byCat[g.category] ?? 0) + g.signals;
+              });
+              const top = Object.entries(byCat).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+              return {
+                state: x,
+                signals: rows.reduce((n, g) => n + g.signals, 0),
+                districts: new Set(rows.map((g) => g.district)).size,
+                topCategory: top,
+                avgGap: gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : null,
+                investment: rows.reduce((n, g) => n + g.investment_inr, 0),
+              } as StateStat;
+            })
+          )
+        )
+          .then((stats) => setStateStats(stats))
+          .catch(() => setStateStats([]));
       })
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
@@ -106,10 +149,16 @@ export default function DashboardPage() {
   }, []);
 
   const districts = [...new Set(hotspots.filter((h) => !fState || h.state === fState).map((h) => h.district))].sort();
-  const stateCount = new Set(hotspots.map((h) => h.state)).size || states.length;
-  const districtCount = new Set(hotspots.map((h) => `${h.state}|${h.district}`)).size;
+  const districtCount = stateStats.length
+    ? stateStats.reduce((n, s) => n + s.districts, 0)
+    : new Set(hotspots.map((h) => `${h.state}|${h.district}`)).size;
   const selected = hotspots.find((h) => h.id === selectedId) ?? hotspots[0] ?? null;
   const districtsFor = (cat: string) => [...new Set(hotspots.filter((h) => h.category === cat).map((h) => h.district))];
+  const topCats: TopCategory[] = summary?.top_categories ?? [];
+  const rising = pulse.filter((p) => p.status === "rising");
+  const topRising = [...rising].sort((a, b) => (b.trend_percent ?? 0) - (a.trend_percent ?? 0))[0];
+  const risingDistricts = new Set(emerging.map((e) => `${e.state}|${e.district}`)).size;
+  const maxCatCount = Math.max(...topCats.map((c) => c.count), 1);
 
   if (error) {
     return (
@@ -122,35 +171,110 @@ export default function DashboardPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
+      {/* BREADCRUMB */}
+      <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
+        <button className="underline hover:text-black" onClick={() => selectState("")}>India</button>
+        {fState && (
+          <>
+            <span> → </span>
+            <button className="underline hover:text-black" onClick={() => { setFDistrict(""); refetch({ state: fState, district: "", category: fCategory, priority: fPriority }); }}>
+              {fState}
+            </button>
+          </>
+        )}
+        {fState && fDistrict && <span> → {fDistrict}</span>}
+      </nav>
+
       {/* HERO */}
-      <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Turning citizen signals into evidence-backed development priorities.</h1>
-      <p className="mt-1 text-sm text-zinc-500">Synthetic demo data (data_source: synthetic_demo). Every metric below is computed live from APIs.</p>
+      <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight">From citizen signals to development priorities.</h1>
+      <p className="mt-1 text-sm text-zinc-500">Synthetic demonstration dataset. Every metric below is computed live from APIs.</p>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {loading || !summary ? (
-          <div className="contents"><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></div>
+          <><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /><Skeleton className="h-20" /></>
         ) : (
           [
-            ["Citizen Signals", fmtInt(summary.citizen_signals)],
-            ["Active Hotspots", fmtInt(summary.active_hotspots)],
-            ["High Priority Areas", fmtInt(summary.high_priority_areas)],
-            ["Population Affected", fmtInt(summary.population_affected)],
+            ["Citizen signals", fmtInt(summary.citizen_signals)],
+            ["States", fmtInt(states.length)],
+            ["Districts", fmtInt(districtCount)],
+            ["Intelligence window", "90 days"],
           ].map(([label, value]) => (
             <div key={label} className="rounded-md border p-4">
               <p className="text-sm text-zinc-500">{label}</p>
               <p className="mt-1 text-2xl font-semibold">{value}</p>
             </div>
-          )))}
+          ))
+        )}
       </div>
-      <p className="mt-2 text-xs text-zinc-500">
-        {fmtInt(stateCount)} states · {fmtInt(districtCount)} districts · 90-day intelligence window (trends: last 30 days vs prior 30 days).
-      </p>
+
+      {/* KPI ROW */}
+      {!loading && summary && (
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[
+            ["Active Hotspots", fmtInt(summary.active_hotspots)],
+            ["High Priority Areas", fmtInt(summary.high_priority_areas)],
+            ["Population Affected", fmtInt(summary.population_affected)],
+            ["Top Category", summary.top_categories[0] ? title(summary.top_categories[0].category) : "—"],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+              <p className="text-sm text-zinc-500">{label}</p>
+              <p className="mt-1 text-2xl font-semibold">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* STATE INTELLIGENCE */}
+      <h2 className="mt-10 text-xl font-semibold">State intelligence</h2>
+      <p className="mt-1 text-sm text-zinc-500">Select a state to drill into its districts. India → State → District → Hotspot → Evidence.</p>
+      {loading ? (
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
+          <Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" />
+        </div>
+      ) : stateStats.length === 0 ? (
+        <p className="mt-4 rounded-md border p-4 text-sm text-zinc-600">State data unavailable.</p>
+      ) : (
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
+          {stateStats.map((s) => (
+            <button key={s.state} onClick={() => selectState(s.state)}
+              className={`rounded-md border p-4 text-left hover:bg-zinc-50 ${fState === s.state ? "ring-2 ring-black" : ""}`}>
+              <p className="font-semibold">{s.state}</p>
+              <p className="mt-1 text-sm">{fmtInt(s.signals)} signals · {s.districts} districts</p>
+              <p className="text-sm text-zinc-600">Top need: {title(s.topCategory)}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Avg gap {s.avgGap?.toFixed(2) ?? "—"} · Investment {fmtInr(s.investment)}
+              </p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* SECTOR OVERVIEW */}
+      <h2 className="mt-10 text-xl font-semibold">Civic need distribution</h2>
+      <p className="mt-1 text-sm text-zinc-500">Only categories present in the dataset. Volumes and trends from the backend.</p>
+      {loading || !summary ? (
+        <div className="mt-4 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {topCats.map((c) => (
+            <li key={c.category} className="flex items-center gap-3 text-sm">
+              <span className="w-36 shrink-0 font-medium">{title(c.category)}</span>
+              <span className="h-3 flex-1 rounded bg-zinc-100">
+                <span className="block h-3 rounded bg-black" style={{ width: `${Math.round((c.count / maxCatCount) * 100)}%` }} />
+              </span>
+              <span className="w-20 text-right">{fmtInt(c.count)}</span>
+              <span className={`w-20 text-right font-medium ${c.trend_percent == null ? "text-zinc-400" : c.trend_percent >= 0 ? "text-red-700" : "text-green-700"}`}>
+                {trendLabel(c.trend_percent)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {/* CIVICPULSE */}
-      <h2 id="civic-pulse" className="mt-10 text-xl font-semibold">CivicPulse</h2>
-      <h2 className="mt-10 text-xl font-semibold">CivicPulse</h2>
-      <p className="mt-1 text-sm text-zinc-500">Last 30 days vs prior 30 days.</p>
+      <h2 id="civic-pulse" className="mt-10 text-xl font-semibold">National CivicPulse</h2>
+      <p className="mt-1 text-sm text-zinc-500">Last 30 days vs prior 30 days. Frontend never computes trends.</p>
       {loading ? (
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
           <Skeleton className="h-28" /><Skeleton className="h-28" /><Skeleton className="h-28" />
@@ -159,37 +283,50 @@ export default function DashboardPage() {
         <p className="mt-4 rounded-md border p-4 text-sm text-zinc-600">No pulse data yet.</p>
       ) : (
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
-          {pulse.map((p) => {
-            const d = districtsFor(p.category);
-            return (
-              <div key={p.category} className="rounded-md border p-4">
-                <div className="flex items-baseline justify-between">
-                  <p className="font-semibold">{title(p.category)}</p>
-                  {p.status !== "insufficient_data" && (
-                    <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">{title(p.status)}</span>
-                  )}
-                </div>
-                {p.status === "insufficient_data" ? (
-                  <p className="mt-1 text-sm text-zinc-500">insufficient_data — not enough history yet</p>
-                ) : (
-                  <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
-                    {trendLabel(p.trend_percent)}
-                  </p>
-                )}
-                <p className="mt-1 text-sm text-zinc-500">{fmtInt(p.current_count)} signals (30d)</p>
-                {p.status === "rising" && d.length > 0 && (
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Affected: {d.slice(0, 3).join(", ")}{d.length > 3 ? ` +${d.length - 3} more` : ""}
-                  </p>
-                )}
+          {pulse.map((p) => (
+            <div key={p.category} className="rounded-md border p-4">
+              <div className="flex items-baseline justify-between">
+                <p className="font-semibold">{title(p.category)}</p>
+                <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">{title(p.status.replace("_", " "))}</span>
               </div>
-            );
-          })}
+              {p.status === "insufficient_data" ? (
+                <p className="mt-1 text-sm text-zinc-500">Not enough history yet.</p>
+              ) : (
+                <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
+                  {trendLabel(p.trend_percent)}
+                </p>
+              )}
+              <p className="mt-1 text-sm text-zinc-500">
+                {fmtInt(p.previous_count)} → {fmtInt(p.current_count)} signals
+              </p>
+              {p.status === "rising" && (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {(() => {
+                    const d = districtsFor(p.category);
+                    return d.length ? `Rising in: ${d.slice(0, 3).join(", ")}${d.length > 3 ? ` +${d.length - 3} more` : ""}` : "";
+                  })()}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
+      {/* DATA STORY */}
+      {!loading && summary && (
+        <section className="mt-10 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">What is India telling us?</h2>
+          <p className="mt-1 text-sm text-zinc-500">Built deterministically from backend metrics — no generated prose.</p>
+          <dl className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-zinc-500">Citizen signals analyzed</dt><dd className="mt-1 text-lg font-semibold">{fmtInt(summary.citizen_signals)}</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-zinc-500">Rising civic category</dt><dd className="mt-1 text-lg font-semibold">{topRising ? `${title(topRising.category)} (${trendLabel(topRising.trend_percent)})` : "None rising"}</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-zinc-500">Districts showing rising demand</dt><dd className="mt-1 text-lg font-semibold">{fmtInt(risingDistricts)}</dd></div>
+          </dl>
+        </section>
+      )}
+
       {/* EMERGING HOTSPOTS */}
-      <h2 className="mt-10 text-xl font-semibold">Emerging hotspots</h2>
+      <h2 className="mt-10 text-xl font-semibold">Emerging civic hotspots</h2>
       {loading ? (
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-3">
           <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
@@ -201,14 +338,14 @@ export default function DashboardPage() {
           {emerging.slice(0, 6).map((e) => (
             <Link key={e.id} href={`/hotspots/${encodeURIComponent(e.id)}`} className="rounded-md border p-4 hover:bg-zinc-50">
               <p className="font-semibold">{e.district} <span className="font-normal text-zinc-500">· {e.state}</span></p>
-              <p className="text-sm text-zinc-600">{title(e.category)} · {title(e.trend_percent >= 0 ? "rising" : "stable")}</p>
+              <p className="text-sm text-zinc-600">{title(e.category)}</p>
               <div className="mt-2 flex items-baseline justify-between text-sm">
                 <span>Demand <b>{fmtInt(e.current_count)}</b></span>
                 <span className="font-semibold text-red-700">↑ {e.trend_percent}%</span>
               </div>
-              <div className="mt-1 flex items-baseline justify-between text-sm text-zinc-600">
-                <span>Gap <b>{emergingGap(e.id)}</b></span>
-                <span>Priority <b>{emergingPriority(e.id)}</b></span>
+              <div className="mt-1 flex items-baseline justify-between text-xs text-zinc-500">
+                <span>Gap {emergingGap(e.id)}</span>
+                <span>Priority {emergingPriority(e.id)}</span>
               </div>
             </Link>
           ))}
@@ -342,21 +479,59 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* ASK JANSETU */}
+      {/* ASK */}
       <h2 className="mt-10 text-xl font-semibold">Ask JanSetu</h2>
       <div className="mt-3">
         <AskJanSetu hotspots={hotspots} />
       </div>
+
+      {/* PROVENANCE */}
+      <section className="mt-10 rounded-md border p-5">
+        <h2 className="text-xl font-semibold">Data & methodology</h2>
+        <dl className="mt-3 space-y-1.5 text-sm">
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">Citizen signals</dt><dd>Synthetic demonstration dataset</dd></div>
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">AI</dt><dd>Google Gemini where configured (extraction + explanations only)</dd></div>
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">Numerical aggregation</dt><dd>Deterministic Python backend</dd></div>
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">Hotspot ranking</dt><dd>Deterministic hotspot engine (factors exposed per hotspot)</dd></div>
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">Trend detection</dt><dd>CivicPulse (last 30 days vs prior 30 days)</dd></div>
+          <div className="flex gap-2"><dt className="w-48 shrink-0 text-zinc-500">Scenario modeling</dt><dd>Prototype simulation engine (estimates, not projections)</dd></div>
+        </dl>
+      </section>
+
+      {/* ARCHITECTURE + SCALE */}
+      <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="rounded-md border p-5">
+          <h2 className="text-lg font-semibold">How intelligence flows</h2>
+          <ol className="mt-2 space-y-1 text-sm text-zinc-700">
+            {["Citizen inputs", "AI understanding", "Civic signal layer", "National data layer", "Civic intelligence", "Policy decisions"].map((s, i, a) => (
+              <li key={s} className="flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold">{i + 1}</span>
+                <span>{s}{i < a.length - 1 ? " ↓" : ""}</span>
+              </li>
+            ))}
+          </ol>
+          <p className="mt-2 text-xs text-zinc-500">Logical pipeline — not a claim about deployed cloud services.</p>
+        </div>
+        <div className="rounded-md border p-5">
+          <h2 className="text-lg font-semibold">Designed for scale</h2>
+          <p className="mt-2 text-sm text-zinc-700">
+            The geographic model is Country → Region → District → Locality, and every
+            engine aggregates by those levels. Architecture can be extended beyond India
+            by replacing geographic and public-data adapters.
+          </p>
+          <p className="mt-2 text-xs text-zinc-500">The system does not currently operate outside the demo dataset.</p>
+        </div>
+      </section>
     </main>
   );
 
   function emergingGap(id: string): string {
     const h = hotspots.find((x) => x.id === id);
-    return h?.gap_index?.toFixed(2) ?? "—";
+    return h?.gap_index?.toFixed(2) ?? "see evidence";
   }
 
   function emergingPriority(id: string): string {
     const h = hotspots.find((x) => x.id === id);
-    return h ? title(h.priority_level) : "—";
+    return h ? title(h.priority_level) : "see evidence";
   }
 }
