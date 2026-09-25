@@ -336,7 +336,9 @@ export default function CitizenPage() {
             <p className="mt-2 font-semibold">Civic data</p>
             <p className="text-zinc-600">Stored signal, district aggregation, infrastructure, demographics, investment.</p>
             <p className="mt-2 text-xs text-zinc-500">AI helps structure your concern. Civic metrics are calculated by JanSetu&apos;s deterministic data engine.</p>
-            {signal.extractor && signal.extractor !== "gemini" && (
+            {signal.extractor === "gemini" ? (
+              <p className="mt-1 text-xs text-zinc-500">Live AI extraction via Google Gemini.</p>
+            ) : (
               <p className="mt-1 text-xs text-zinc-500">Demo fallback — structured without a live AI call.</p>
             )}
           </div>
