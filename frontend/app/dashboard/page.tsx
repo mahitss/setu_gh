@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
 import AskJanSetu from "@/components/AskJanSetu";
+import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
-import type { EmergingHotspot, Hotspot, PulseItem, Summary, TopCategory } from "@/lib/api";
+import type { EmergingHotspot, Hotspot, PulseItem, RecommendationOut, Summary, TopCategory } from "@/lib/api";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const CATEGORIES = ["healthcare", "water", "roads", "education", "electricity", "sanitation"];
 const PRIORITIES = ["critical", "high", "medium", "low", "minimal"];
@@ -62,6 +65,13 @@ export default function DashboardPage() {
   const [fCategory, setFCategory] = useState("");
   const [fPriority, setFPriority] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selRec, setSelRec] = useState<RecommendationOut | null>(null);
+  const [selSim, setSelSim] = useState<{
+    label: string;
+    scenario: { intervention: string; budget_cr: number };
+    estimate: { population_reached: number; coverage_improvement: number; gap_reduction: number };
+  } | null>(null);
+  const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +91,8 @@ export default function DashboardPage() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setFiltering(true);
+    setSelRec(null);
+    setSelSim(null);
     loadHotspots(ctrl.signal, filters)
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
@@ -148,11 +160,59 @@ export default function DashboardPage() {
     return () => ctrl.abort();
   }, []);
 
+  function selectHotspot(id: string) {
+    setSelectedId(id);
+    setSelRec(null);
+    setSelSim(null);
+  }
+
+  const selected = hotspots.find((h) => h.id === selectedId) ?? hotspots[0] ?? null;
+  useEffect(() => {
+    if (!selected) return;
+    const ctrl = new AbortController();
+    const base = `/api/v1/hotspots/${encodeURIComponent(selected.id)}`;
+    apiGet<RecommendationOut>(`${base}/recommendation`, ctrl.signal)
+      .then(setSelRec)
+      .catch(() => setSelRec(null));
+    fetch(`${API_URL}/api/v1/simulate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: selected.state, district: selected.district, category: selected.category, budget: 100 * 1e7 }),
+      signal: ctrl.signal,
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => setSelSim(s))
+      .catch(() => setSelSim(null));
+    return () => ctrl.abort();
+  }, [selected]);
+
+  function copySummary() {
+    if (!selected) return;
+    const lines = [
+      "JanSetu Policy Summary",
+      "",
+      `Location: ${selected.district}, ${selected.state}`,
+      `Category: ${title(selected.category)}`,
+      `Citizen demand: ${fmtInt(selected.signals)} signals (${trendLabel(selected.trend_pct)})`,
+      `Trend: ${selected.trend_pct == null ? "history building" : `${selected.trend_pct}% (30d vs prior 30d)`}`,
+      `Infrastructure context: gap ${selected.gap_index?.toFixed(2) ?? "—"}, population ${fmtInt(selected.population)}, investment ${fmtInr(selected.investment_inr)}`,
+      selRec ? `Recommended intervention: ${selRec.recommendation.intervention}` : "Recommended intervention: see evidence page",
+      selSim ? `Prototype scenario: ₹${selSim.scenario.budget_cr} Cr → ${fmtInt(selSim.estimate.population_reached)} reached` : "Prototype scenario: see simulator",
+      "",
+      "This is for demonstration only (synthetic demonstration dataset).",
+    ];
+    try {
+      void navigator.clipboard.writeText(lines.join("\n")).then(() => setCopied(true));
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  }
+
   const districts = [...new Set(hotspots.filter((h) => !fState || h.state === fState).map((h) => h.district))].sort();
   const districtCount = stateStats.length
     ? stateStats.reduce((n, s) => n + s.districts, 0)
     : new Set(hotspots.map((h) => `${h.state}|${h.district}`)).size;
-  const selected = hotspots.find((h) => h.id === selectedId) ?? hotspots[0] ?? null;
   const districtsFor = (cat: string) => [...new Set(hotspots.filter((h) => h.category === cat).map((h) => h.district))];
   const topCats: TopCategory[] = summary?.top_categories ?? [];
   const rising = pulse.filter((p) => p.status === "rising");
@@ -356,7 +416,7 @@ export default function DashboardPage() {
       <h2 className="mt-10 text-xl font-semibold">National map</h2>
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          {loading ? <Skeleton className="h-96 w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={setSelectedId} />}
+          {loading ? <Skeleton className="h-96 w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
         </div>
         <div className="rounded-md border p-4">
           <h3 className="font-semibold">Evidence panel</h3>
@@ -427,7 +487,7 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {hotspots.slice(0, 20).map((h) => (
-                <tr key={h.id} className={`border-t hover:bg-zinc-50 ${selected?.id === h.id ? "bg-zinc-50" : ""}`} onClick={() => setSelectedId(h.id)} style={{ cursor: "pointer" }}>
+                <tr key={h.id} className={`border-t hover:bg-zinc-50 ${selected?.id === h.id ? "bg-zinc-50" : ""}`} onClick={() => selectHotspot(h.id)} style={{ cursor: "pointer" }}>
                   <td className="px-3 py-2">
                     <Link className="underline" href={hotspotHref(h)} onClick={(e) => e.stopPropagation()}>{h.district}, {h.state}</Link>
                   </td>
@@ -445,7 +505,8 @@ export default function DashboardPage() {
       )}
 
       {/* RECENT SIGNALS */}
-      <h2 className="mt-10 text-xl font-semibold">Recent signals</h2>
+      <h2 className="mt-10 text-xl font-semibold">What citizens are saying</h2>
+      <p className="mt-1 text-sm text-zinc-500">Actual recent reports from the database. No personal information collected.</p>
       {loading ? (
         <div className="mt-3 space-y-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>
       ) : (
@@ -453,12 +514,155 @@ export default function DashboardPage() {
           {recent.map((s) => (
             <li key={s.id} className="rounded-md border p-3">
               <span className="font-medium">{title(s.category)}</span>
-              <span className="text-zinc-500"> · {title(s.severity)} · {s.district}, {s.state}</span>
+              <span className="text-zinc-500"> · {s.district} · {s.language} · {s.created_at ? new Date(s.created_at).toLocaleDateString() : "—"}</span>
               <p className="mt-1 text-zinc-700">{s.summary ?? "—"}</p>
             </li>
           ))}
           {recent.length === 0 && <p className="text-sm text-zinc-500">No signals yet.</p>}
         </ul>
+      )}
+
+      {/* IMPACT */}
+      {!loading && summary && (
+        <section className="mt-10 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">JanSetu impact</h2>
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-5">
+            {[
+              ["Citizen signals analyzed", fmtInt(summary.citizen_signals)],
+              ["States represented", fmtInt(states.length)],
+              ["Districts represented", fmtInt(districtCount)],
+              ["Rising civic categories", fmtInt(rising.length)],
+              ["Emerging hotspots", fmtInt(emerging.length)],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-md bg-zinc-50 p-3">
+                <dt className="text-xs text-zinc-500">{k}</dt>
+                <dd className="mt-1 text-lg font-semibold">{v}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-2 text-xs text-zinc-500">Synthetic demonstration dataset. All values from backend APIs.</p>
+        </section>
+      )}
+
+      {/* STORY FLOW */}
+      {!loading && summary && (
+        <section className="mt-6">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {[
+              `${fmtInt(summary.citizen_signals)}+ citizen signals`,
+              "CivicPulse",
+              "Emerging hotspots",
+              "Evidence",
+              "Policy action",
+            ].map((s, i, a) => (
+              <span key={s} className="flex items-center gap-2">
+                <span className="rounded-md border px-3 py-1.5 font-medium">{s}</span>
+                {i < a.length - 1 && <span className="text-zinc-400">↓</span>}
+              </span>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">Prototype dataset — signal counts are demo data, not official statistics.</p>
+        </section>
+      )}
+
+      {/* RISING */}
+      {!loading && rising.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-xl font-semibold">Where demand is rising</h2>
+          <div className="mt-3 overflow-x-auto rounded-md border">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-zinc-50">
+                <tr>
+                  {["Category", "Location", "Previous", "Current", "Change", "Status"].map((h) => (
+                    <th key={h} className="px-3 py-2 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rising.map((p) => {
+                  const d = districtsFor(p.category);
+                  return (
+                    <tr key={p.category} className="border-t">
+                      <td className="px-3 py-2 font-medium">{title(p.category)}</td>
+                      <td className="px-3 py-2">{d.slice(0, 3).join(", ")}{d.length > 3 ? ` +${d.length - 3}` : ""}</td>
+                      <td className="px-3 py-2">{fmtInt(p.previous_count)}</td>
+                      <td className="px-3 py-2">{fmtInt(p.current_count)}</td>
+                      <td className="px-3 py-2 font-semibold text-red-700">{trendLabel(p.trend_percent)}</td>
+                      <td className="px-3 py-2">{title(p.status)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* WHY SELECTED */}
+      {selected && (
+        <section className="mt-10 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">Why this matters — {selected.district}, {selected.state}</h2>
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-5">
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-xs text-zinc-500">Citizen demand</dt><dd className="mt-1 font-semibold">{fmtInt(selected.signals)} signals</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-xs text-zinc-500">Trend</dt><dd className="mt-1 font-semibold">{trendLabel(selected.trend_pct)}</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-xs text-zinc-500">Infrastructure gap</dt><dd className="mt-1 font-semibold">{selected.gap_index?.toFixed(2) ?? "—"}</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-xs text-zinc-500">Population</dt><dd className="mt-1 font-semibold">{fmtInt(selected.population)}</dd></div>
+            <div className="rounded-md bg-zinc-50 p-3"><dt className="text-xs text-zinc-500">Investment</dt><dd className="mt-1 font-semibold">{fmtInr(selected.investment_inr)}</dd></div>
+          </dl>
+          <ul className="mt-3 space-y-1 text-sm">
+            {whyBullets(selected).map(([m, l]) => <li key={l} className="flex gap-2"><span>{m}</span><span>{l}</span></li>)}
+          </ul>
+        </section>
+      )}
+
+      {/* RECOMMENDS */}
+      {selected && selRec && (
+        <section className="mt-6 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">What JanSetu recommends</h2>
+          <p className="mt-2 text-lg font-semibold">{selRec.recommendation.intervention}</p>
+          <p className="mt-1 text-sm text-zinc-600">
+            Evidence: {fmtInt(selRec.evidence.citizen_signals)} signals · {fmtInt(selRec.evidence.population_affected)} affected ·
+            confidence {selRec.recommendation.confidence.toFixed(2)}
+          </p>
+          <Link href={hotspotHref(selected)} className="mt-3 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
+            Explore recommendation
+          </Link>
+        </section>
+      )}
+
+      {/* WHAT IF */}
+      {selected && selSim && (
+        <section className="mt-6 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">What if we invest?</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Current: {fmtInt(selSim ? selected.population : 0)} affected →
+            Intervention: {title(selSim.scenario.intervention)} →
+            Prototype scenario estimate: <b>{fmtInt(selSim.estimate.population_reached)} reached</b>
+          </p>
+          <Link
+            href={`/simulate?state=${encodeURIComponent(selected.state)}&district=${encodeURIComponent(selected.district)}&category=${encodeURIComponent(selected.category)}`}
+            className="mt-3 inline-block rounded-md border px-4 py-2 text-sm">
+            Open Investment Scenario Lab
+          </Link>
+        </section>
+      )}
+
+      {/* BRIEF */}
+      {selected && (
+        <section className="mt-6 rounded-md border p-5">
+          <h2 className="text-xl font-semibold">JanSetu policy brief</h2>
+          <dl className="mt-3 space-y-1 text-sm">
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Location</dt><dd className="font-medium">{selected.district}, {selected.state}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Category</dt><dd className="font-medium">{title(selected.category)}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Demand</dt><dd className="font-medium">{fmtInt(selected.signals)} signals ({trendLabel(selected.trend_pct)})</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Infrastructure gap</dt><dd className="font-medium">{selected.gap_index?.toFixed(2) ?? "—"}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Recommendation</dt><dd className="font-medium">{selRec ? selRec.recommendation.intervention : "loading…"}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Scenario</dt><dd className="font-medium">{selSim ? `₹${selSim.scenario.budget_cr} Cr → ${fmtInt(selSim.estimate.population_reached)} reached (prototype estimate)` : "loading…"}</dd></div>
+          </dl>
+          <Button variant="outline" size="sm" className="mt-3" onClick={copySummary}>
+            {copied ? "Copied ✓" : "Copy summary"}
+          </Button>
+        </section>
       )}
 
       {/* CTA */}
