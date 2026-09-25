@@ -39,7 +39,7 @@ def _keyword_parse(question: str, db: Session) -> dict:
             break
     if any(w in q for w in ["high gap", "low coverage", "poor coverage", "no facility"]):
         filters["min_gap"] = 0.5
-    if any(w in q for w in ["high demand", "most demand", "rising demand", "surging"]):
+    if any(w in q for w in ["high demand", "most demand", "rising demand", "demand rising", "rising", "increasing", "surging"]):
         filters["min_signals"] = 50
     if any(w in q for w in ["low investment", "low existing investment", "underfunded", "under-funded", "under invested", "less funding"]):
         filters["max_investment_cr"] = 30.0

@@ -13,7 +13,7 @@ from ..services.engine import simulate
 from ..services.gemini import explain_recommendation, explain_structured
 from ..services.recommendation_engine import build_recommendation
 from ..services.hotspot_engine import (
-    MODEL_NOTE, civic_pulse, hotspot_id, hotspot_rows, parse_hotspot_id, top_categories,
+    MODEL_NOTE, civic_pulse, hotspot_rows, parse_hotspot_id, top_categories,
 )
 from ..services.seed import DATA_SOURCE
 from ..services.simulation_engine import ASSUMPTIONS, INTERVENTIONS, LABEL, simulate_district
@@ -281,11 +281,7 @@ def _apply_policy_filters(db: Session, f: PolicyQueryFilters) -> list[dict]:
             continue
         if f.max_investment_cr is not None and r["investment_inr"] > f.max_investment_cr * 1e7:
             continue
-        out.append({"id": hotspot_id(r["state"], r["district"], r["category"]),
-                    "state": r["state"], "district": r["district"], "category": r["category"],
-                    "signals": r["signals"], "gap_index": r["gap_index"],
-                    "investment_inr": r["investment_inr"], "priority_score": r["priority_score"],
-                    "priority_level": r["priority_level"]})
+        out.append(r)  # full hotspot row: map/cards reuse the same deterministic object
     return out
 
 

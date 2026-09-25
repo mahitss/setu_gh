@@ -439,6 +439,24 @@ def test_nl_policy_query():
     assert client.post("/api/v1/policy-query/nl", json={"question": "hi"}).status_code == 422
 
 
+def test_nl_water_state_and_rising_category(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    r = client.post("/api/v1/policy-query/nl", json={"question": "Show me water problems in Bihar"})
+    body = r.json()
+    assert body["source"] == "keyword_parser"  # Gemini-unavailable fallback
+    assert body["filters"]["category"] == "water" and body["filters"]["state"] == "Bihar"
+    assert all(m["state"] == "Bihar" for m in body["matches"])
+    # full hotspot rows: map/cards reuse trend, population, ids
+    assert all(set(["id", "trend_pct", "population", "priority_level"]) <= set(m) for m in body["matches"])
+    r2 = client.post("/api/v1/policy-query/nl", json={"question": "Where is road demand rising?"})
+    assert r2.json()["filters"] == {"category": "roads", "min_gap": 0.0, "min_signals": 50}
+
+
+def test_policy_query_no_results():
+    r = client.get("/api/v1/policy-query", params={"min_signals": 999999})
+    assert r.status_code == 200 and r.json()["count"] == 0 and r.json()["matches"] == []
+
+
 # --- Phase 9: recommendation engine ---
 
 def test_recommendation_engine_deterministic():
