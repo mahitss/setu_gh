@@ -32,6 +32,7 @@ type Signal = {
   state: string | null;
   district: string | null;
   extractor?: string;
+  ai_confidence?: number;
 };
 
 type VoicePhase = "ready" | "recording" | "processing" | "complete" | "error";
@@ -203,7 +204,8 @@ export default function CitizenPage() {
         <span> → Citizen Voice</span>
       </nav>
       <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
-      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">Tell us what your community needs.</h1>
+      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">Tell JanSetu what your community needs.</h1>
+      <p className="mt-2 max-w-2xl text-zinc-600">You can write it or simply speak. JanSetu will help structure your concern.</p>
       <p className="mt-2 max-w-2xl text-zinc-600">
         Share a local problem in your own words. JanSetu turns your voice into a
         structured civic signal that can be connected to development data.
@@ -252,7 +254,9 @@ export default function CitizenPage() {
               />
             </section>
           ) : (
-            <section aria-labelledby="voice-heading" className="rounded-md border p-5">
+            <section aria-labelledby="voice-heading" className="rounded-md border border-[#E7E3DB] bg-[#F6F4EF] p-5">
+              <h2 id="voice-heading" className="text-lg font-semibold">Speak your concern</h2>
+              <p className="mt-1 text-sm text-zinc-600">Speak naturally. Hindi, English and other supported languages are welcome.</p>
               <h2 id="voice-heading" className="text-lg font-semibold">Speak your concern</h2>
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <label className="text-sm" htmlFor="voice-lang">Voice language</label>
@@ -323,7 +327,7 @@ export default function CitizenPage() {
           {/* CTA */}
           <div className="mt-6">
             {mode === "text" ? (
-              <Button className="min-h-11 px-6" onClick={() => analyzeText(text)} disabled={loading}>
+              <Button className="min-h-11 px-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]" onClick={() => analyzeText(text)} disabled={loading}>
                 {loading ? "Analyzing…" : "Analyze my concern →"}
               </Button>
             ) : (
@@ -368,14 +372,15 @@ export default function CitizenPage() {
       {signal && (
         <section aria-labelledby="result-heading" className="mx-auto mt-8 max-w-3xl rounded-md border p-5">
           <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU UNDERSTANDS</p>
-          <h2 id="result-heading" className="mt-1 text-xl font-semibold">✓ Concern recorded <span className="font-normal text-zinc-500">· Step 4</span></h2>
-          <p className="mt-1 text-sm text-zinc-600">Your concern has been converted into a structured civic signal.</p>
+          <h2 id="result-heading" className="mt-1 text-xl font-semibold">Your concern has been heard. ✓</h2>
+          <p className="mt-1 text-sm text-zinc-600">JanSetu converted your message into a structured civic signal.</p>
           <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
             <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Category</dt><dd>{title(signal.category)}</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Severity</dt><dd>{title(signal.severity)}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Severity</dt><dd>{title(signal.severity)} priority</dd></div>
             <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Language</dt><dd>{LANGUAGE_NAMES[signal.language] ?? signal.language}</dd></div>
             <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Location</dt><dd>{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
             <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Signal ID</dt><dd>#{signal.id}</dd></div>
+            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Confidence</dt><dd>{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
             {submittedAt && <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Submitted</dt><dd>{submittedAt}</dd></div>}
           </dl>
           <p className="mt-3 text-sm"><span className="font-medium">Issue:</span> {signal.summary ?? title(signal.sub_category ?? signal.category)}</p>
@@ -384,8 +389,8 @@ export default function CitizenPage() {
             {signal.extractor === "gemini" ? "Live AI extraction via Google Gemini." : "Demo fallback — structured without a live AI call."}
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/dashboard" className="rounded-md bg-black px-4 py-2 text-sm text-white">
-              See how this contributes to civic trends →
+            <Link href="/dashboard" className="rounded-md bg-black px-4 py-2 text-sm text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+              View how this contributes to civic intelligence →
             </Link>
             {exploreId && (
               <Link href={`/hotspots/${encodeURIComponent(exploreId)}`} className="rounded-md border px-4 py-2 text-sm">

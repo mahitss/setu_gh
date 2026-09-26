@@ -29,7 +29,7 @@ export default function Navbar() {
           {LINKS.map(([label, href]) => (
             <Link key={href + label} href={href}
               aria-current={path === href ? "page" : undefined}
-              className={path === href ? "font-semibold underline underline-offset-4" : "hover:underline"}>
+              className={`relative py-1 transition-colors duration-150 hover:text-black after:absolute after:bottom-0 after:left-0 after:h-px after:bg-current after:transition-all after:duration-200 ${path === href ? "font-semibold text-black after:w-full" : "text-zinc-600 after:w-0 hover:after:w-full"}`}>
               {label}
             </Link>
           ))}
@@ -38,7 +38,10 @@ export default function Navbar() {
           <span className="rounded border px-2 py-0.5 text-[11px] text-zinc-500">Demo Mode</span>
           {user ? (
             <>
-                <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-xs font-semibold text-white" aria-hidden="true">
+                {(user.name || "?").charAt(0).toUpperCase()}
+              </span>
+              <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
               <button onClick={signout} className="rounded-md border px-3 py-2 text-sm">Sign out</button>
             </>
           ) : (
@@ -69,7 +72,10 @@ export default function Navbar() {
           <div className="mt-4 flex flex-col gap-2 border-t pt-4">
             {user ? (
               <>
-              <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-xs font-semibold text-white" aria-hidden="true">
+                  {(user.name || "?").charAt(0).toUpperCase()}
+                </span>
+                <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
                 <button onClick={() => { signout(); setOpen(false); }} className="rounded-md border px-4 py-2 text-sm">Sign out</button>
               </>
             ) : (

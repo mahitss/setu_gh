@@ -189,7 +189,7 @@ function Simulator() {
           <h1 className="mt-1 font-serif text-4xl font-semibold tracking-tight">Model development interventions before committing resources.</h1>
           <p className="mt-3 max-w-xl text-zinc-600">
             Explore prototype investment scenarios using JanSetu&apos;s civic intelligence,
-            infrastructure gaps and citizen demand.
+            infrastructure gaps and citizen demand. What could change if we invest differently?
           </p>
           <p className="mt-2 text-xs text-zinc-500">Prototype estimates — not guaranteed outcomes.</p>
         </div>
@@ -258,7 +258,7 @@ function Simulator() {
           aria-label="Budget in crore rupees" />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {PRESETS.map((p) => (
-            <button key={p} className={`rounded-md border px-4 py-2 text-sm ${budgetCr === p ? "bg-black text-white" : "bg-white"}`}
+            <button key={p} className={`rounded-md border px-4 py-2 text-sm transition-colors duration-150 ${budgetCr === p ? "bg-black text-white" : "bg-white"}`}
               onClick={() => run(p)} disabled={loading}>₹{p} Cr</button>
           ))}
           <span className="ml-2 flex items-center gap-2 text-sm">
@@ -284,7 +284,7 @@ function Simulator() {
             <p className="mt-2 font-serif text-4xl font-semibold">₹{result.scenario.budget_cr} Cr</p>
             <p className="mt-1 text-lg">{title(result.scenario.intervention)}</p>
             <p className="text-sm text-zinc-500">Prototype estimate</p>
-            <p className="mt-4 font-serif text-5xl font-semibold">{fmtInt(result.estimate.population_reached)}</p>
+            <p key={result.estimate.population_reached} className="mt-4 font-serif text-5xl font-semibold animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
             <p className="text-sm text-zinc-500">people potentially reached</p>
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
               <div className="rounded-md bg-zinc-50 p-4">

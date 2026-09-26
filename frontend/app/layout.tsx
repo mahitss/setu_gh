@@ -22,10 +22,11 @@ export const metadata: Metadata = {
 
 function SiteFooter() {
   return (
-    <footer className="mt-auto border-t">
+    <footer className="mt-auto border-t bg-[#F6F4EF]">
       <div className="mx-auto max-w-7xl px-6 md:px-10 py-8 text-sm">
         <p className="font-bold tracking-widest">JANSETU</p>
         <p className="mt-1 text-zinc-500">AI Civic Intelligence for India</p>
+        <p className="mt-1 text-zinc-500">Built to help communities turn lived experience into structured civic intelligence.</p>
         <div className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-4">
           <nav aria-label="Product">
             <p className="text-xs font-semibold tracking-wide text-zinc-500">Product</p>

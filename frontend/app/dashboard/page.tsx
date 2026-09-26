@@ -450,13 +450,19 @@ export default function DashboardPage() {
           <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
         </div>
       ) : emerging.length === 0 ? (
-        <p className="mt-3 rounded-md border p-4 text-sm text-zinc-600">No emerging hotspots right now.</p>
+        <p className="mt-3 rounded-md border p-4 text-sm text-zinc-600">
+          No emerging hotspot detected. JanSetu has not identified a significant rise
+          in any category during the current intelligence window.
+        </p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
           {emerging.filter((e) => e.trend_percent > 0).slice(0, 6).map((e) => (
             <Link key={e.id} href={`/hotspots/${encodeURIComponent(e.id)}`}
-              className="rounded-md border p-4 hover:bg-zinc-50">
-              <p className="font-semibold">{e.district} <span className="font-normal text-zinc-500">· {e.state}</span></p>
+              className="rounded-md border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+              <p className="flex items-center gap-2 font-semibold">
+                <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-[#D99A18]" />
+                {e.district} <span className="font-normal text-zinc-500">· {e.state}</span>
+              </p>
               <p className="text-sm text-zinc-600">{title(e.category)}</p>
               <div className="mt-2 flex items-baseline justify-between text-sm">
                 <span>Demand <b>{fmtInt(e.current_count)}</b></span>

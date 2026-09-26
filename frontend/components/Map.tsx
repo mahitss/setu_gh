@@ -125,7 +125,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
   return (
     <div>
-      <svg viewBox="0 0 100 100" className="h-[28rem] w-full rounded-md border bg-zinc-50" role="img" aria-label="India demand hotspots map (fallback)">
+      <svg viewBox="0 0 100 100" className="h-[28rem] w-full rounded-md border border-[#E7E3DB] bg-[#F6F4EF]" role="img" aria-label="India demand hotspots map (fallback)">
         <text x="50" y="7" textAnchor="middle" fontSize="4.5" fontWeight="bold" fill="#3f3f46" letterSpacing="2">INDIA</text>
         <text x="50" y="12" textAnchor="middle" fontSize="2.4" fill="#71717a" letterSpacing="1">DEMAND HOTSPOTS</text>
         <defs>
@@ -140,7 +140,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
               r={1.6 + (p.signals / max) * 2.8} fill="#f59e0b" />
           ))}
         </g>
-        {pts.map((p) => (
+        {pts.map((p, i) => (
           <circle
             key={p.id}
             cx={X(p.longitude!)}
@@ -150,7 +150,8 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             opacity={selected?.id === p.id ? 1 : 0.85}
             stroke={selected?.id === p.id ? "#000" : "#fff"}
             strokeWidth={0.3}
-            style={{ cursor: "pointer" }}
+            className="signal-dot"
+            style={{ cursor: "pointer", animationDelay: `${(i % 7) * 0.4}s` }}
             onClick={() => openHotspot(p)}
             role="button" tabIndex={0} aria-label={`Open evidence for ${p.district}, ${title(p.category)}`}
             onKeyDown={(e) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
@@ -8,7 +8,42 @@ import type { Hotspot, PulseItem, RecommendationOut, Summary } from "@/lib/api";
 
 const LAT_MIN = 8, LAT_MAX = 37, LON_MIN = 68, LON_MAX = 97;
 
-const PIPELINE = ["Citizen voice", "AI understanding", "Civic signal", "CivicPulse", "Hotspot", "Evidence", "Action"];
+const PIPELINE: [string, string][] = [
+  ["Citizen voice", "People describe what their community needs."],
+  ["AI understanding", "Gemini converts voice and text into structured civic signals."],
+  ["Civic signal", "A validated, located record of one community concern."],
+  ["CivicPulse", "Timestamps reveal which needs are rising."],
+  ["Hotspot", "Demand concentrates in specific districts."],
+  ["Evidence", "Gaps, people affected and investment, side by side."],
+  ["Action", "Policymakers explore recommendations and scenarios."],
+];
+
+function CountUp({ value, format }: { value: number; format: (n: number) => string }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const done = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || done.current) return;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      done.current = true;
+      io.disconnect();
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const dur = reduced ? 0 : 900;
+      const start = performance.now();
+      const tick = (t: number) => {
+        const p = dur === 0 ? 1 : Math.min(1, (t - start) / dur);
+        setDisplay(Math.round(value * p));
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [value]);
+  return <span ref={ref}>{format(display)}</span>;
+}
 
 type SimPreview = {
   scenario: { intervention: string; budget_cr: number };
@@ -33,9 +68,9 @@ function HeroMap({ hotspots }: { hotspots: Hotspot[] }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <line key={`h${i}`} x1="0" y1={(i + 1) * 10} x2="100" y2={(i + 1) * 10} stroke="#3f3f46" strokeWidth="0.15" />
       ))}
-      {pts.map((p) => (
+      {pts.map((p, i) => (
         <circle key={p.id} cx={X(p.longitude!)} cy={Y(p.latitude!) * 0.62} r={1 + (p.signals / max) * 2.4}
-          fill="#fbbf24" opacity={0.85}>
+          fill="#fbbf24" className="signal-dot" style={{ animationDelay: `${(i % 7) * 0.4}s` }}>
           <title>{`${p.district} — ${p.category}: ${p.signals} signals`}</title>
         </circle>
       ))}
@@ -52,13 +87,20 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadMsg, setLoadMsg] = useState("Connecting citizen signals…");
   const [reloadKey, setReloadKey] = useState(0);
 
   function retry() {
     setError(null);
     setLoading(true);
+    setLoadMsg("Connecting citizen signals…");
     setReloadKey((k) => k + 1);
   }
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoadMsg("Building civic intelligence…"), 2500);
+    return () => clearTimeout(t);
+  }, [reloadKey]);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -91,7 +133,7 @@ export default function Home() {
       })
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
-        setError("Live data unavailable — start the backend to see civic intelligence.");
+        setError("Civic intelligence is temporarily unavailable.");
       })
       .finally(() => {
         if (!ctrl.signal.aborted) setLoading(false);
@@ -112,17 +154,17 @@ export default function Home() {
           <div className="animate-[fade-up_.5s_ease-out]">
             <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
             <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              Turn citizen voices into development decisions.
+              Turn <span className="text-amber-400">citizen voices</span> into development decisions.
             </h1>
             <p className="mt-4 max-w-xl text-zinc-300">
               JanSetu connects citizen needs, infrastructure gaps, demographic context and
               public investment to surface evidence-backed development priorities.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/citizen" className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-black hover:bg-zinc-200">
+              <Link href="/citizen" className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
                 Report a Community Need →
               </Link>
-              <Link href="/dashboard" className="rounded-md border border-zinc-700 px-5 py-2.5 text-sm hover:bg-zinc-900">
+              <Link href="/dashboard" className="rounded-md border border-zinc-700 px-5 py-2.5 text-sm transition-colors duration-200 hover:border-zinc-400 hover:bg-zinc-900">
                 Explore Civic Intelligence
               </Link>
             </div>
@@ -152,24 +194,34 @@ export default function Home() {
       )}
       {loading && !summary && (
         <div className="mx-auto max-w-7xl px-6 md:px-10 pt-6">
-          <p className="text-sm text-zinc-500" role="status">Loading civic intelligence…</p>
+          <p className="text-sm text-zinc-500" role="status">
+            <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#D99A18]" aria-hidden="true" />
+            {loadMsg}
+          </p>
         </div>
       )}
 
       {/* DATA STRIP */}
       <section className="border-b">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 py-8 lg:grid-cols-4">
-          {[
-            [`${summary ? fmtInt(summary.citizen_signals) : "—"}+`, "Citizen signals analyzed"],
-            [summary ? fmtInt(states) : "—", "States"],
-            [summary ? fmtInt(districts) : "—", "Districts"],
-            ["90 days", "Intelligence window"],
-          ].map(([v, l]) => (
-            <div key={l}>
-              <p className="text-3xl font-semibold">{v}</p>
-              <p className="mt-1 text-sm text-zinc-500">{l}</p>
-            </div>
-          ))}
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-8 md:px-10 lg:grid-cols-4">
+          <div>
+            <p className="text-3xl font-semibold">
+              {summary ? <><CountUp value={summary.citizen_signals} format={fmtInt} />+</> : "—"}
+            </p>
+            <p className="mt-1 text-sm text-zinc-500">Citizen signals analyzed</p>
+          </div>
+          <div>
+            <p className="text-3xl font-semibold">{summary ? <CountUp value={states} format={fmtInt} /> : "—"}</p>
+            <p className="mt-1 text-sm text-zinc-500">States</p>
+          </div>
+          <div>
+            <p className="text-3xl font-semibold">{summary ? <CountUp value={districts} format={fmtInt} /> : "—"}</p>
+            <p className="mt-1 text-sm text-zinc-500">Districts</p>
+          </div>
+          <div>
+            <p className="text-3xl font-semibold">90 days</p>
+            <p className="mt-1 text-sm text-zinc-500">Intelligence window</p>
+          </div>
         </div>
         <p className="mx-auto max-w-7xl px-6 md:px-10 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
       </section>
@@ -177,19 +229,27 @@ export default function Home() {
       {/* PIPELINE */}
       <section className="mx-auto max-w-7xl px-6 md:px-10 py-20">
         <h2 className="text-2xl font-semibold">How JanSetu thinks</h2>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {PIPELINE.map((s, i) => (
-            <span key={s} className="flex items-center gap-2">
-              <span className="rounded-md border px-3 py-2 text-sm font-medium">{s}</span>
-              {i < PIPELINE.length - 1 && <span className="text-zinc-400">↓</span>}
-            </span>
+        <ol className="mt-5 flex flex-wrap items-stretch gap-0">
+          {PIPELINE.map(([s, d], i) => (
+            <li key={s} className="group flex items-center">
+              <span className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold transition-colors duration-200 group-hover:bg-[#D99A18] group-hover:text-white">
+                  {i + 1}
+                </span>
+                <span>
+                  <span className="block font-medium">{s}</span>
+                  <span className="mt-0.5 hidden max-w-44 text-xs text-zinc-500 group-hover:block">{d}</span>
+                </span>
+              </span>
+              {i < PIPELINE.length - 1 && <span className="mx-1 h-px w-4 bg-zinc-300" aria-hidden="true" />}
+            </li>
           ))}
-        </div>
+        </ol>
         <p className="mt-3 text-sm text-zinc-600">AI interprets human input. Deterministic engines calculate the numbers.</p>
       </section>
 
       {/* INTELLIGENCE PREVIEW */}
-      <section className="border-y bg-zinc-50">
+      <section className="border-y bg-[#F6F4EF]">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-semibold">National civic intelligence</h2>
@@ -223,12 +283,12 @@ export default function Home() {
         <p className="mt-1 text-sm text-zinc-500">30-day change vs previous 30 days, from the backend.</p>
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[...pulse].sort((a, b) => (b.trend_percent ?? -Infinity) - (a.trend_percent ?? -Infinity)).slice(0, 4).map((p) => (
-            <div key={p.category} className="rounded-md border p-4">
+            <div key={p.category} className="rounded-md border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <p className="text-sm font-semibold tracking-wide">{title(p.category).toUpperCase()}</p>
               <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
                 {(p.trend_percent ?? 0) >= 0 ? "↑" : "↓"} {trendLabel(p.trend_percent)}
               </p>
-              <p className="mt-1 text-xs text-zinc-500">{fmtInt(p.current_count)} signals · {title(p.status)}</p>
+              <p className="mt-1 text-xs text-zinc-500">{fmtInt(p.current_count)} signals · Demand is {p.status === "rising" ? "rising" : p.status.replace("_", " ")}</p>
             </div>
           ))}
         </div>
@@ -290,7 +350,7 @@ export default function Home() {
 
       {/* SIMULATOR */}
       {sim && top && (
-        <section className="border-y bg-zinc-50">
+        <section className="border-y bg-[#F6F4EF]">
           <div className="mx-auto max-w-7xl px-6 md:px-10 py-20">
             <h2 className="text-2xl font-semibold">What if we invest?</h2>
             <p className="mt-1 text-sm text-zinc-600">
