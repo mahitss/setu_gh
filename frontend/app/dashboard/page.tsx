@@ -251,7 +251,7 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto max-w-[1240px] px-6 md:px-10 py-8">
+    <main className="mx-auto w-full max-w-[1480px] px-5 md:px-6 min-[1440px]:px-10 py-8">
       {/* BREADCRUMB */}
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
         <button className="underline hover:text-black" onClick={() => selectState("")}>India</button>
@@ -268,13 +268,13 @@ export default function DashboardPage() {
       </nav>
 
       {/* HERO + KPI HIERARCHY */}
-      <p className="mt-4 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
-      <h1 className="mt-1 max-w-[760px] font-serif text-3xl font-semibold tracking-tight">From citizen signals<br />to development priorities.</h1>
-      <p className="mt-2 max-w-[760px] text-sm text-zinc-600">
+      <p className="mt-6 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
+      <h1 className="mt-3 max-w-[850px] font-serif text-[clamp(44px,4vw,60px)] font-bold leading-[1.02] tracking-tight">From citizen signals<br />to development priorities.</h1>
+      <p className="mt-[18px] max-w-[760px] text-sm text-zinc-600">
         Every metric is computed from the demonstration backend. Citizen signals,
         infrastructure context and investment data are combined to surface emerging development needs.
       </p>
-      <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
+      <p className="mt-[14px] inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
         <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
         DEMONSTRATION DATASET
       </p>
@@ -291,17 +291,17 @@ export default function DashboardPage() {
               ["Active hotspots", fmtInt(summary.active_hotspots), "locations with detected demand"],
               ["High priority areas", fmtInt(summary.high_priority_areas), "requiring immediate attention"],
             ].map(([label, value, desc]) => (
-              <div key={label} className="h-[120px] rounded-xl border border-[#E7E3DB] bg-white p-6">
-                <p className="flex items-center gap-1.5 text-xs font-semibold tracking-widest text-zinc-500">
+              <div key={label} className="h-[140px] rounded-xl border border-[#E7E3DB] bg-white p-7">
+                <p className="flex items-center gap-1.5 text-[13px] font-semibold tracking-widest text-zinc-500">
                   <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
                   {label.toUpperCase()}
                 </p>
-                <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
-                <p className="mt-1 text-xs text-zinc-500">{desc}</p>
+                <p className="mt-1 text-[36px] font-semibold tabular-nums leading-none">{value}</p>
+                <p className="mt-1 text-[13px] text-zinc-500">{desc}</p>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-sm text-zinc-500">
+          <p className="mt-[14px] text-sm text-zinc-500">
             <span className="font-semibold text-black">{fmtInt(states.length)}</span> States ·
             {" "}<span className="font-semibold text-black">{fmtInt(districtCount)}</span> Districts ·
             {" "}<span className="font-semibold text-black">{fmtInt(summary.population_affected)}</span> Population affected ·
@@ -312,11 +312,11 @@ export default function DashboardPage() {
       )}
 
       {/* MAP + PULSE RAIL */}
-      <section className="mt-9" aria-label="National civic demand map">
+      <section className="mt-[42px]" aria-label="National civic demand map">
         <h2 className="text-xl font-semibold tracking-wide">National demand map</h2>
         <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrating across the demonstration dataset.</p>
-        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-5 lg:grid-cols-12">
-          <div className="rounded-[14px] border border-[#E7E3DB] bg-[#F8F6F1] p-4 md:col-span-3 lg:col-span-8">
+        <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-5 lg:grid-cols-[minmax(0,2.1fr)_minmax(320px,0.9fr)]">
+          <div className="rounded-[14px] border border-[#E7E3DB] bg-[#F8F6F1] p-4 md:col-span-3 lg:col-span-1">
             <div className="flex items-center justify-between text-[11px] font-semibold tracking-widest text-zinc-500">
               <span className="flex items-center gap-1.5">
                 <span aria-hidden="true" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" />
@@ -325,10 +325,10 @@ export default function DashboardPage() {
               <span>90 DAY WINDOW</span>
             </div>
             <div className="mt-2">
-              {loading ? <Skeleton className="h-[26rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
+              {loading ? <Skeleton className="h-[500px] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
             </div>
           </div>
-          <div className="md:col-span-2 lg:col-span-4">
+          <div className="md:col-span-2 lg:col-span-1">
             <div className="rounded-xl border border-[#E7E3DB] bg-white p-4">
               <h3 className="text-sm font-semibold tracking-wide text-zinc-500">CIVICPULSE</h3>
               <p className="text-xs text-zinc-500">Rising civic demand <span aria-hidden="true" className="ml-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" /> <span className="font-semibold text-zinc-600">LIVE</span></p>
@@ -339,12 +339,12 @@ export default function DashboardPage() {
               ) : (
                 <ul className="mt-2 space-y-2">
                   {railRising.map((p) => (
-                    <li key={p.category} className="group flex items-center justify-between rounded-md bg-zinc-50 p-2 text-sm transition-colors duration-150 hover:bg-zinc-100">
+                    <li key={p.category} className="group flex items-center justify-between rounded-md bg-zinc-50 p-4 text-sm transition-colors duration-150 hover:bg-zinc-100">
                       <span>
-                        <span className="font-semibold">{title(p.category)}</span>
-                        <span className="block text-xs text-zinc-500">{fmtInt(p.current_count)} signals · Rising</span>
+                        <span className="text-base font-semibold">{title(p.category)}</span>
+                        <span className="block text-[13px] text-zinc-500">{fmtInt(p.current_count)} signals · Rising</span>
                       </span>
-                      <span className="font-semibold text-red-700 transition-transform duration-150 group-hover:translate-x-0.5">↑ {p.trend_percent}%</span>
+                      <span className="text-xl font-semibold text-red-700 transition-transform duration-150 group-hover:translate-x-0.5">↑ {p.trend_percent}%</span>
                     </li>
                   ))}
                 </ul>
@@ -656,7 +656,7 @@ export default function DashboardPage() {
         <section className="mt-8">
           <h2 className="text-xl font-semibold">Where demand is rising</h2>
           <div className="mt-3 overflow-x-auto rounded-md border">
-            <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm tabular-nums">
               <thead className="bg-zinc-50">
                 <tr>
                   {["Category", "Location", "Previous", "Current", "Change", "Status"].map((h) => (
