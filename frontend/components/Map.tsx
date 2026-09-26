@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
 
@@ -45,21 +46,12 @@ export function MapLegend() {
         <span className="inline-block h-2 w-20 rounded bg-gradient-to-r from-zinc-200 via-amber-300 to-red-700" />
         LOW — HIGH
       </span>
-      <span>Trend: <b className="text-red-700">Rising</b> · <b>Stable</b> · <b className="text-green-700">Declining</b></span>
+      <span>Trend: <b className="text-red-700">↑ Rising</b> · <b>→ Stable</b> · <b className="text-green-700">↓ Declining</b></span>
       <span title="P0 critical (≥0.85) · P1 high (≥0.7) · P2 medium (≥0.5) · P3 low/minimal (<0.5)">
         Priority: P0 · P1 · P2 · P3
       </span>
     </div>
   );
-}
-
-function infoHtml(h: Hotspot): string {
-  return `<div style="font-size:13px;line-height:1.5;max-width:220px">` +
-    `<b>${title(h.category)}</b><br>${h.district}, ${h.state}<br>` +
-    `${fmtInt(h.signals)} signals · ${trendLabel(h.trend_pct)}<br>` +
-    `Infrastructure gap: ${h.gap_index?.toFixed(2) ?? "—"}<br>` +
-    `Population affected: ${fmtInt(h.population)}<br>` +
-    `<a href="${hotspotHref(h)}">View Evidence</a></div>`;
 }
 
 export default function Map({ hotspots, selectedId, onSelect }: {
@@ -68,9 +60,15 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   onSelect: (id: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [mapsFailed, setMapsFailed] = useState(false);
   const pts = hotspots.filter((h) => h.latitude != null && h.longitude != null).slice(0, 50);
   const selected = hotspots.find((h) => h.id === selectedId) ?? null;
+
+  function openHotspot(h: Hotspot) {
+    onSelect(h.id);
+    router.push(hotspotHref(h));
+  }
 
   useEffect(() => {
     if (!MAPS_KEY || mapsFailed || !ref.current || pts.length === 0) return;
@@ -82,7 +80,6 @@ export default function Map({ hotspots, selectedId, onSelect }: {
           center: { lat: 23.5, lng: 80 },
           zoom: 5,
         });
-        const info = new window.google.maps.InfoWindow();
         for (const p of pts) {
           const marker = new window.google.maps.Marker({
             position: { lat: p.latitude, lng: p.longitude },
@@ -90,9 +87,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             title: `${p.district} — ${p.category} (${p.signals})`,
           });
           marker.addListener("click", () => {
-            onSelect(p.id);
-            info.setContent(infoHtml(p));
-            info.open(map, marker);
+            openHotspot(p);
           });
         }
         // Intensity layer from actual signal volume (same provider, no new dependency).
@@ -139,10 +134,10 @@ export default function Map({ hotspots, selectedId, onSelect }: {
           </filter>
         </defs>
         {/* Intensity layer: blurred signal-volume circles (district coordinates, real data). */}
-        <g filter="url(#hs-heat)" opacity="0.5">
+        <g filter="url(#hs-heat)" opacity="0.35">
           {pts.map((p) => (
             <circle key={`heat-${p.id}`} cx={X(p.longitude!)} cy={Y(p.latitude!)}
-              r={2.5 + (p.signals / max) * 4.5} fill="#f59e0b" />
+              r={2 + (p.signals / max) * 3.5} fill="#f59e0b" />
           ))}
         </g>
         {pts.map((p) => (
@@ -150,14 +145,19 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             key={p.id}
             cx={X(p.longitude!)}
             cy={Y(p.latitude!)}
-            r={1.2 + (p.signals / max) * 2.2}
+            r={0.9 + (p.signals / max) * 1.6}
             fill={p.priority_score >= 0.7 ? "#b91c1c" : p.priority_score >= 0.5 ? "#d97706" : "#3f6212"}
-            opacity={selected?.id === p.id ? 1 : 0.75}
-            stroke={selected?.id === p.id ? "#000" : "none"}
+            opacity={selected?.id === p.id ? 1 : 0.85}
+            stroke={selected?.id === p.id ? "#000" : "#fff"}
+            strokeWidth={0.3}
             style={{ cursor: "pointer" }}
-            onClick={() => onSelect(p.id)}
+            onClick={() => openHotspot(p)}
+            role="button" tabIndex={0} aria-label={`Open evidence for ${p.district}, ${title(p.category)}`}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") openHotspot(p);
+            }}
           >
-            <title>{`${p.district}, ${p.state} — ${p.category}: ${p.signals} signals`}</title>
+            <title>{`${p.district}, ${p.state} — ${title(p.category)}: ${fmtInt(p.signals)} signals, trend ${trendLabel(p.trend_pct)}, ${title(p.priority_level)} priority. Activate to open evidence.`}</title>
           </circle>
         ))}
         {pts.length === 0 && <text x="50" y="50" textAnchor="middle" fontSize="3">No coordinates</text>}

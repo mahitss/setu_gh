@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Map, { PRIORITY_TIER } from "@/components/Map";
+import Map from "@/components/Map";
 import AskJanSetu from "@/components/AskJanSetu";
 import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
@@ -222,6 +222,10 @@ export default function DashboardPage() {
 
   const districtsFor = (cat: string) => [...new Set(hotspots.filter((h) => h.category === cat).map((h) => h.district))];
   const topCats: TopCategory[] = summary?.top_categories ?? [];
+  const railRising = [...pulse]
+    .filter((p) => p.status === "rising")
+    .sort((a, b) => (b.trend_percent ?? 0) - (a.trend_percent ?? 0))
+    .slice(0, 4);
   const maxCatCount = Math.max(...topCats.map((c) => c.count), 1);
   const maxPulse = Math.max(...pulse.flatMap((p) => [p.current_count, p.previous_count]), 1);
   const maxStateSignals = Math.max(...stateStats.map((s) => s.signals), 1);
@@ -288,41 +292,79 @@ export default function DashboardPage() {
         </>
       )}
 
-      {/* MAP + SIDE PANEL */}
-      <section className="relative mt-8" aria-label="National civic demand map">
+      {/* MAP + PULSE RAIL */}
+      <section className="relative mt-6" aria-label="National civic demand map">
         <svg aria-hidden="true" className="pointer-events-none absolute -top-6 right-0 h-28 w-64 opacity-20" viewBox="0 0 200 80" fill="none" stroke="#a1a1aa" strokeWidth="1">
           <ellipse cx="100" cy="45" rx="90" ry="32" />
           <ellipse cx="100" cy="45" rx="65" ry="22" />
           <ellipse cx="100" cy="45" rx="40" ry="13" />
         </svg>
-        <h2 className="text-xl font-semibold">National civic demand map</h2>
-        <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrated across the current demonstration dataset.</p>
+        <h2 className="text-xl font-semibold">National demand map</h2>
+        <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrating across the demonstration dataset. Synthetic demonstration dataset.</p>
         <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            {loading ? <Skeleton className="h-[28rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
+          <div className="lg:col-span-8">
+            {loading ? <Skeleton className="h-[26rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
           </div>
-          <aside className="rounded-md border p-4 lg:col-span-5" aria-label="Selected hotspot">
-            <h3 className="text-sm font-semibold tracking-wide text-zinc-500">SELECTED HOTSPOT</h3>
-            {!selected ? (
-              <p className="mt-2 text-sm text-zinc-500">No hotspot selected.</p>
-            ) : (
-              <>
-                <p className="mt-1 font-semibold">{selected.district}, {selected.state} — {title(selected.category)}</p>
-                <p className="text-sm text-zinc-600">
-                  {title(selected.priority_level)} · {PRIORITY_TIER[selected.priority_level] ?? "—"} · {fmtInt(selected.signals)} signals · {trendLabel(selected.trend_pct)}
-                </p>
-                <ul className="mt-2 space-y-1 text-sm">
-                  {whyBullets(selected).slice(0, 3).map(([m, l]) => <li key={l} className="flex gap-2"><span>{m}</span><span>{l}</span></li>)}
+          <div className="lg:col-span-4">
+            <div className="rounded-md border p-4">
+              <h3 className="text-sm font-semibold tracking-wide text-zinc-500">CIVICPULSE · RISING</h3>
+              {loading ? (
+                <div className="mt-2 space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
+              ) : railRising.length === 0 ? (
+                <p className="mt-2 text-sm text-zinc-500">No rising categories right now.</p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {railRising.map((p) => (
+                    <li key={p.category} className="flex items-center justify-between rounded-md bg-zinc-50 p-2 text-sm">
+                      <span>
+                        <span className="font-semibold">{title(p.category)}</span>
+                        <span className="block text-xs text-zinc-500">{fmtInt(p.current_count)} signals · {title(p.status)}</span>
+                      </span>
+                      <span className="font-semibold text-red-700">↑ {p.trend_percent}%</span>
+                    </li>
+                  ))}
                 </ul>
-                <div className="mt-3 flex gap-3 text-sm">
-                  <Link className="underline" href={hotspotHref(selected)}>View Evidence →</Link>
-                  <Link className="underline" href={`/simulate?state=${encodeURIComponent(selected.state)}&district=${encodeURIComponent(selected.district)}&category=${encodeURIComponent(selected.category)}`}>Simulate →</Link>
-                </div>
-              </>
-            )}
-          </aside>
+              )}
+              <Link href="#civic-pulse" className="mt-2 inline-block text-sm underline">Full trends ↓</Link>
+            </div>
+            <div className="mt-4 rounded-md border p-4" aria-label="Selected hotspot">
+              <h3 className="text-sm font-semibold tracking-wide text-zinc-500">SELECTED HOTSPOT</h3>
+              {!selected ? (
+                <p className="mt-2 text-sm text-zinc-500">Click a marker or table row.</p>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm font-semibold">{selected.district}, {selected.state} — {title(selected.category)}</p>
+                  <p className="text-sm text-zinc-600">
+                    {title(selected.priority_level)} · {fmtInt(selected.signals)} signals · {trendLabel(selected.trend_pct)}
+                  </p>
+                  <div className="mt-2 flex gap-3 text-sm">
+                    <Link className="underline" href={hotspotHref(selected)}>View Evidence →</Link>
+                    <Link className="underline" href={`/simulate?state=${encodeURIComponent(selected.state)}&district=${encodeURIComponent(selected.district)}&category=${encodeURIComponent(selected.category)}`}>Simulate →</Link>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* SIGNAL → ACTION */}
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm" aria-label="Signal to action">
+        {[
+          ["Citizen signal", "/dashboard"],
+          ["CivicPulse", "/dashboard#civic-pulse"],
+          ["Hotspot", selected ? hotspotHref(selected) : "/dashboard"],
+          ["Evidence", selected ? hotspotHref(selected) : "/dashboard"],
+          ["Action", selected
+            ? `/simulate?state=${encodeURIComponent(selected.state)}&district=${encodeURIComponent(selected.district)}&category=${encodeURIComponent(selected.category)}`
+            : "/simulate"],
+        ].map(([label, href], i, a) => (
+          <span key={label} className="flex items-center gap-2">
+            <Link href={href} className="rounded-md border px-3 py-1.5 font-medium hover:bg-zinc-50">{label}</Link>
+            {i < a.length - 1 && <span className="text-zinc-400">↓</span>}
+          </span>
+        ))}
+      </div>
 
       {/* PULSE CHART + DISTRIBUTION */}
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
