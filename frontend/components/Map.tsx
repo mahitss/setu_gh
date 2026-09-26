@@ -20,12 +20,37 @@ function loadMaps(): Promise<void> {
   if (window.google?.maps) return Promise.resolve();
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}`;
+    s.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&libraries=visualization`;
     s.async = true;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("maps-load"));
     document.head.appendChild(s);
   });
+}
+
+// Priority tiers mirror the backend hotspot engine thresholds.
+export const PRIORITY_TIER: Record<string, string> = {
+  critical: "P0",
+  high: "P1",
+  medium: "P2",
+  low: "P3",
+  minimal: "P3",
+};
+
+export function MapLegend() {
+  return (
+    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-600">
+      <span className="flex items-center gap-2">
+        Signal intensity
+        <span className="inline-block h-2 w-20 rounded bg-gradient-to-r from-zinc-200 via-amber-300 to-red-700" />
+        LOW — HIGH
+      </span>
+      <span>Trend: <b className="text-red-700">Rising</b> · <b>Stable</b> · <b className="text-green-700">Declining</b></span>
+      <span title="P0 critical (≥0.85) · P1 high (≥0.7) · P2 medium (≥0.5) · P3 low/minimal (<0.5)">
+        Priority: P0 · P1 · P2 · P3
+      </span>
+    </div>
+  );
 }
 
 function infoHtml(h: Hotspot): string {
@@ -70,6 +95,21 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             info.open(map, marker);
           });
         }
+        // Intensity layer from actual signal volume (same provider, no new dependency).
+        try {
+          if (window.google.maps.visualization) {
+            new window.google.maps.visualization.HeatmapLayer({
+              data: pts.map((p) => ({
+                location: new window.google.maps.LatLng(p.latitude, p.longitude),
+                weight: p.signals,
+              })),
+              map,
+              radius: 30,
+            });
+          }
+        } catch {
+          /* markers alone still carry the visualization */
+        }
       })
       .catch(() => setMapsFailed(true));
     return () => {
@@ -79,7 +119,12 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   }, [hotspots]);
 
   if (MAPS_KEY && !mapsFailed) {
-    return <div ref={ref} className="h-96 w-full rounded-md border" role="img" aria-label="Hotspot map" />;
+    return (
+      <div>
+        <div ref={ref} className="h-[28rem] w-full rounded-md border" role="img" aria-label="Hotspot map" />
+        <MapLegend />
+      </div>
+    );
   }
 
   const max = Math.max(...pts.map((p) => p.signals), 1);
@@ -87,7 +132,19 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
   return (
     <div>
-      <svg viewBox="0 0 100 100" className="h-96 w-full rounded-md border bg-zinc-50" role="img" aria-label="Hotspot map (fallback)">
+      <svg viewBox="0 0 100 100" className="h-[28rem] w-full rounded-md border bg-zinc-50" role="img" aria-label="Hotspot map (fallback)">
+        <defs>
+          <filter id="hs-heat" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="2.4" />
+          </filter>
+        </defs>
+        {/* Intensity layer: blurred signal-volume circles (district coordinates, real data). */}
+        <g filter="url(#hs-heat)" opacity="0.5">
+          {pts.map((p) => (
+            <circle key={`heat-${p.id}`} cx={X(p.longitude!)} cy={Y(p.latitude!)}
+              r={2.5 + (p.signals / max) * 4.5} fill="#f59e0b" />
+          ))}
+        </g>
         {pts.map((p) => (
           <circle
             key={p.id}
@@ -117,6 +174,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
       <p className="mt-1 text-xs text-zinc-500">
         {MAPS_KEY ? "Interactive map unavailable — showing fallback." : "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for the interactive map."} Circle size = signals; red = high priority. Click a marker for details.
       </p>
+      <MapLegend />
     </div>
   );
 }
