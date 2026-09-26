@@ -52,12 +52,6 @@ function Skeleton({ className }: { className: string }) {
   return <div className={`animate-pulse rounded-md bg-zinc-100 ${className}`} />;
 }
 
-function severityBorder(level: string): string {
-  if (level === "critical" || level === "high") return "border-l-4 border-l-red-700";
-  if (level === "medium") return "border-l-4 border-l-amber-500";
-  return "border-l-4 border-l-green-700";
-}
-
 export default function DashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
@@ -227,7 +221,6 @@ export default function DashboardPage() {
     .sort((a, b) => (b.trend_percent ?? 0) - (a.trend_percent ?? 0))
     .slice(0, 4);
   const maxCatCount = Math.max(...topCats.map((c) => c.count), 1);
-  const maxPulse = Math.max(...pulse.flatMap((p) => [p.current_count, p.previous_count]), 1);
   const maxStateSignals = Math.max(...stateStats.map((s) => s.signals), 1);
   const trendGroups: Record<string, PulseItem[]> = { rising: [], stable: [], declining: [], insufficient_data: [] };
   pulse.forEach((p) => {
@@ -299,8 +292,8 @@ export default function DashboardPage() {
           <ellipse cx="100" cy="45" rx="65" ry="22" />
           <ellipse cx="100" cy="45" rx="40" ry="13" />
         </svg>
-        <h2 className="text-xl font-semibold">National demand map</h2>
-        <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrating across the demonstration dataset. Synthetic demonstration dataset.</p>
+        <h2 className="text-xl font-semibold tracking-wide">National demand map</h2>
+        <p className="mt-1 text-sm text-zinc-500">Hotspot intensity across the demonstration dataset.</p>
         <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-12">
           <div className="lg:col-span-8">
             {loading ? <Skeleton className="h-[26rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
@@ -369,36 +362,27 @@ export default function DashboardPage() {
       {/* PULSE CHART + DISTRIBUTION */}
       <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-md border p-4" aria-label="CivicPulse demand trend">
-          <h2 className="text-lg font-semibold">CivicPulse — demand trend</h2>
-          <p className="text-xs text-zinc-500">Previous 30 days vs current 30 days. Backend comparison, not frontend math.</p>
+          <h2 className="text-lg font-semibold tracking-wide">CivicPulse</h2>
+          <p className="text-xs text-zinc-500">How citizen demand is changing (30d vs prior 30d).</p>
           {loading ? (
             <div className="mt-3 space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
           ) : pulse.length === 0 ? (
             <p className="mt-3 text-sm text-zinc-500">No pulse data yet.</p>
           ) : (
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {pulse.map((p) => (
-                <li key={p.category} className="text-sm">
-                  <div className="flex items-baseline justify-between">
-                    <span className="font-medium">{title(p.category)}</span>
-                    <span className={`font-semibold ${p.status === "insufficient_data" ? "text-zinc-400" : (p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
-                      {p.status === "insufficient_data" ? "insufficient data" : trendLabel(p.trend_percent)}
-                    </span>
-                  </div>
-                  <div className="mt-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-xs text-zinc-500">Prev {fmtInt(p.previous_count)}</span>
-                      <span className="h-2 flex-1 rounded bg-zinc-100">
-                        <span className="block h-2 rounded bg-zinc-400" style={{ width: `${Math.round((p.previous_count / maxPulse) * 100)}%` }} />
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-xs text-zinc-500">Curr {fmtInt(p.current_count)}</span>
-                      <span className="h-2 flex-1 rounded bg-zinc-100">
-                        <span className="block h-2 rounded bg-black" style={{ width: `${Math.round((p.current_count / maxPulse) * 100)}%` }} />
-                      </span>
-                    </div>
-                  </div>
+                <li key={p.category} className="rounded-md bg-zinc-50 p-3 text-sm">
+                  <p className="font-semibold tracking-wide">{title(p.category).toUpperCase()}</p>
+                  {p.status === "insufficient_data" ? (
+                    <p className="mt-1 text-xs text-zinc-500">Insufficient data</p>
+                  ) : (
+                    <>
+                      <p className={`mt-1 text-xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
+                        {(p.trend_percent ?? 0) >= 0 ? "↑" : "↓"} {trendLabel(p.trend_percent)}
+                      </p>
+                      <p className="text-xs text-zinc-500">{title(p.status)} · {fmtInt(p.previous_count)} → {fmtInt(p.current_count)}</p>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
@@ -456,6 +440,7 @@ export default function DashboardPage() {
 
       {/* EMERGING HOTSPOTS */}
       <h2 className="mt-8 text-xl font-semibold">Emerging hotspots</h2>
+      <p className="mt-1 text-sm text-zinc-500">Hotspots with rising demand.</p>
       {loading ? (
         <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
           <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
@@ -464,18 +449,18 @@ export default function DashboardPage() {
         <p className="mt-3 rounded-md border p-4 text-sm text-zinc-600">No emerging hotspots right now.</p>
       ) : (
         <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
-          {emerging.slice(0, 6).map((e) => (
+          {emerging.filter((e) => e.trend_percent > 0).slice(0, 6).map((e) => (
             <Link key={e.id} href={`/hotspots/${encodeURIComponent(e.id)}`}
-              className={`rounded-md border p-4 hover:bg-zinc-50 ${severityBorder(hotspots.find((x) => x.id === e.id)?.priority_level ?? "")}`}>
+              className="rounded-md border p-4 hover:bg-zinc-50">
               <p className="font-semibold">{e.district} <span className="font-normal text-zinc-500">· {e.state}</span></p>
               <p className="text-sm text-zinc-600">{title(e.category)}</p>
               <div className="mt-2 flex items-baseline justify-between text-sm">
                 <span>Demand <b>{fmtInt(e.current_count)}</b></span>
                 <span className="font-semibold text-red-700">↑ {e.trend_percent}%</span>
               </div>
-              <div className="mt-1 flex items-baseline justify-between text-xs text-zinc-500">
-                <span>Gap {emergingGap(e.id)}</span>
-                <span>Priority {emergingPriority(e.id)}</span>
+              <div className="mt-1 space-y-0.5 text-xs text-zinc-500">
+                <p>Trend: rising · Priority: {emergingPriority(e.id)}</p>
+                <p>Infrastructure gap: {emergingGap(e.id)}</p>
               </div>
             </Link>
           ))}
@@ -568,12 +553,13 @@ export default function DashboardPage() {
       {selected && (
         <section className="mt-8 rounded-md border border-zinc-300 p-5" aria-label="Evidence to action">
           <h2 className="text-xl font-semibold">From signal to action</h2>
-          <ol className="mt-3 space-y-2 text-sm">
-            <li className="flex gap-3"><span className="font-semibold">Citizen demand:</span><span>{fmtInt(selected.signals)} signals in {selected.district}</span></li>
-            <li className="flex gap-3"><span className="font-semibold">CivicPulse:</span><span>{trendLabel(selected.trend_pct)} (30d vs prior 30d)</span></li>
-            <li className="flex gap-3"><span className="font-semibold">Infrastructure gap:</span><span>{selected.gap_index?.toFixed(2) ?? "—"}</span></li>
-            <li className="flex gap-3"><span className="font-semibold">Recommendation:</span><span>{selRec ? selRec.recommendation.intervention : "loading…"}</span></li>
-            <li className="flex gap-3"><span className="font-semibold">Investment scenario:</span><span>{selSim ? `₹${selSim.scenario.budget_cr} Cr → ${fmtInt(selSim.estimate.population_reached)} reached (prototype estimate)` : "loading…"}</span></li>
+          <ol className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">CITIZEN SIGNAL</p><p className="mt-1 font-semibold">{fmtInt(selected.signals)} signals in {selected.district}</p></li>
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">CIVICPULSE</p><p className="mt-1 font-semibold">{trendLabel(selected.trend_pct)} (30d vs prior 30d)</p></li>
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">HOTSPOT</p><p className="mt-1 font-semibold">{selected.district}, {title(selected.category)}</p></li>
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">INFRASTRUCTURE GAP</p><p className="mt-1 font-semibold">{selected.gap_index?.toFixed(2) ?? "—"}</p></li>
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">RECOMMENDATION</p><p className="mt-1 font-semibold">{selRec ? title(selRec.recommendation.intervention).slice(0, 42) + "…" : "loading…"}</p></li>
+            <li className="rounded-md bg-zinc-50 p-3"><p className="text-xs font-semibold text-zinc-500">INVESTMENT SCENARIO</p><p className="mt-1 font-semibold">{selSim ? `₹${selSim.scenario.budget_cr} Cr → ${fmtInt(selSim.estimate.population_reached)}` : "loading…"}</p></li>
           </ol>
           <div className="mt-4 flex flex-wrap gap-3">
             <Link href={hotspotHref(selected)} className="rounded-md bg-black px-4 py-2 text-sm text-white">View Evidence</Link>

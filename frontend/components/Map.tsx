@@ -40,15 +40,13 @@ export const PRIORITY_TIER: Record<string, string> = {
 
 export function MapLegend() {
   return (
-    <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-600">
-      <span className="flex items-center gap-2">
-        Signal intensity
-        <span className="inline-block h-2 w-20 rounded bg-gradient-to-r from-zinc-200 via-amber-300 to-red-700" />
-        LOW — HIGH
+    <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-500">
+      <span>
+        Demand intensity <span className="font-medium text-zinc-700">LOW → HIGH</span>
       </span>
-      <span>Trend: <b className="text-red-700">↑ Rising</b> · <b>→ Stable</b> · <b className="text-green-700">↓ Declining</b></span>
+      <span>Trend <b className="text-red-700">↑ Rising</b> · <b>→ Stable</b> · <b className="text-green-700">↓ Declining</b></span>
       <span title="P0 critical (≥0.85) · P1 high (≥0.7) · P2 medium (≥0.5) · P3 low/minimal (<0.5)">
-        Priority: P0 · P1 · P2 · P3
+        Priority <b className="text-zinc-700">P0 / P1 / P2 / P3</b>
       </span>
     </div>
   );
@@ -134,10 +132,10 @@ export default function Map({ hotspots, selectedId, onSelect }: {
           </filter>
         </defs>
         {/* Intensity layer: blurred signal-volume circles (district coordinates, real data). */}
-        <g filter="url(#hs-heat)" opacity="0.35">
+        <g filter="url(#hs-heat)" opacity="0.28">
           {pts.map((p) => (
             <circle key={`heat-${p.id}`} cx={X(p.longitude!)} cy={Y(p.latitude!)}
-              r={2 + (p.signals / max) * 3.5} fill="#f59e0b" />
+              r={1.6 + (p.signals / max) * 2.8} fill="#f59e0b" />
           ))}
         </g>
         {pts.map((p) => (
@@ -145,7 +143,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             key={p.id}
             cx={X(p.longitude!)}
             cy={Y(p.latitude!)}
-            r={0.9 + (p.signals / max) * 1.6}
+            r={0.7 + (p.signals / max) * 1.2}
             fill={p.priority_score >= 0.7 ? "#b91c1c" : p.priority_score >= 0.5 ? "#d97706" : "#3f6212"}
             opacity={selected?.id === p.id ? 1 : 0.85}
             stroke={selected?.id === p.id ? "#000" : "#fff"}
