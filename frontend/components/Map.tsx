@@ -121,6 +121,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   }
 
   const max = Math.max(...pts.map((p) => p.signals), 1);
+  const tierR = (s: number) => (s / max > 0.66 ? 2.1 : s / max > 0.33 ? 1.5 : 0.9);
   const X = (lon: number) => ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * 100;
   const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
   return (
@@ -145,7 +146,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
             key={p.id}
             cx={X(p.longitude!)}
             cy={Y(p.latitude!)}
-            r={0.7 + (p.signals / max) * 1.2}
+            r={tierR(p.signals)}
             fill={p.priority_score >= 0.7 ? "#b91c1c" : p.priority_score >= 0.5 ? "#d97706" : "#3f6212"}
             opacity={selected?.id === p.id ? 1 : 0.85}
             stroke={selected?.id === p.id ? "#000" : "#fff"}

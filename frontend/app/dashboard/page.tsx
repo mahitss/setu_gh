@@ -74,6 +74,7 @@ export default function DashboardPage() {
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [filtering, setFiltering] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -165,7 +166,13 @@ export default function DashboardPage() {
       })
       .finally(() => setLoading(false));
     return () => ctrl.abort();
-  }, []);
+  }, [reloadKey]);
+
+  function retry() {
+    setError(null);
+    setLoading(true);
+    setReloadKey((k) => k + 1);
+  }
 
   const districts = [...new Set(hotspots.filter((h) => !fState || h.state === fState).map((h) => h.district))].sort();
   const districtCount = stateStats.length
@@ -231,9 +238,12 @@ export default function DashboardPage() {
   if (error) {
     return (
       <RequireAuth>
-      <main className="mx-auto max-w-7xl px-6 md:px-10 py-12">
+      <main className="mx-auto max-w-[1240px] px-6 md:px-10 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
         <p className="mt-3 text-sm text-zinc-600">The dashboard needs the backend at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}. Start it and refresh.</p>
+        <button onClick={retry} className="mt-3 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
+          Retry
+        </button>
       </main>
       </RequireAuth>
     );
@@ -241,70 +251,87 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto max-w-7xl px-6 md:px-10 py-8">
+    <main className="mx-auto max-w-[1240px] px-6 md:px-10 py-8">
       {/* BREADCRUMB */}
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
         <button className="underline hover:text-black" onClick={() => selectState("")}>India</button>
+        <span> / Civic Intelligence</span>
         {fState && (
           <>
-            <span> → </span>
+            <span> / </span>
             <button className="underline hover:text-black" onClick={() => { setFDistrict(""); refetch({ state: fState, district: "", category: fCategory, priority: fPriority }); }}>
               {fState}
             </button>
           </>
         )}
-        {fState && fDistrict && <span> → {fDistrict}</span>}
+        {fState && fDistrict && <span> / {fDistrict}</span>}
       </nav>
 
       {/* HERO + KPI HIERARCHY */}
-      <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
-      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">From citizen signals to development priorities.</h1>
-      <p className="mt-1 text-sm text-zinc-500">Synthetic demonstration dataset. Every metric below is computed from the demonstration backend.</p>
+      <p className="mt-4 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
+      <h1 className="mt-1 max-w-[760px] font-serif text-3xl font-semibold tracking-tight">From citizen signals<br />to development priorities.</h1>
+      <p className="mt-2 max-w-[760px] text-sm text-zinc-600">
+        Every metric is computed from the demonstration backend. Citizen signals,
+        infrastructure context and investment data are combined to surface emerging development needs.
+      </p>
+      <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
+        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
+        DEMONSTRATION DATASET
+      </p>
 
       {loading || !summary ? (
-        <div className="mt-5 grid grid-cols-3 gap-4">
-          <Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" />
+        <div className="mt-8 grid grid-cols-3 gap-4">
+          <Skeleton className="h-[120px]" /><Skeleton className="h-[120px]" /><Skeleton className="h-[120px]" />
         </div>
       ) : (
         <>
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              ["Citizen signals", fmtInt(summary.citizen_signals)],
-              ["Active hotspots", fmtInt(summary.active_hotspots)],
-              ["High priority areas", fmtInt(summary.high_priority_areas)],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-md border p-5">
-                <p className="text-sm text-zinc-500">{label}</p>
-                <p className="mt-1 text-3xl font-semibold">{value}</p>
+              ["Citizen signals", fmtInt(summary.citizen_signals), "signals analyzed"],
+              ["Active hotspots", fmtInt(summary.active_hotspots), "locations with detected demand"],
+              ["High priority areas", fmtInt(summary.high_priority_areas), "requiring immediate attention"],
+            ].map(([label, value, desc]) => (
+              <div key={label} className="h-[120px] rounded-xl border border-[#E7E3DB] bg-white p-6">
+                <p className="flex items-center gap-1.5 text-xs font-semibold tracking-widest text-zinc-500">
+                  <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
+                  {label.toUpperCase()}
+                </p>
+                <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
+                <p className="mt-1 text-xs text-zinc-500">{desc}</p>
               </div>
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600">
-            <span>States <b className="text-black">{fmtInt(states.length)}</b></span>
-            <span>Districts <b className="text-black">{fmtInt(districtCount)}</b></span>
-            <span>Population affected <b className="text-black">{fmtInt(summary.population_affected)}</b></span>
-            <span>Top category <b className="text-black">{summary.top_categories[0] ? title(summary.top_categories[0].category) : "—"}</b></span>
-            <span className="text-zinc-400">90-day intelligence window</span>
-          </div>
+          <p className="mt-4 text-sm text-zinc-500">
+            <span className="font-semibold text-black">{fmtInt(states.length)}</span> States ·
+            {" "}<span className="font-semibold text-black">{fmtInt(districtCount)}</span> Districts ·
+            {" "}<span className="font-semibold text-black">{fmtInt(summary.population_affected)}</span> Population affected ·
+            {" "}Top category: <span className="font-semibold text-black">{summary.top_categories[0] ? title(summary.top_categories[0].category) : "—"}</span> ·
+            {" "}90-day intelligence window
+          </p>
         </>
       )}
 
       {/* MAP + PULSE RAIL */}
-      <section className="relative mt-6" aria-label="National civic demand map">
-        <svg aria-hidden="true" className="pointer-events-none absolute -top-6 right-0 h-28 w-64 opacity-20" viewBox="0 0 200 80" fill="none" stroke="#a1a1aa" strokeWidth="1">
-          <ellipse cx="100" cy="45" rx="90" ry="32" />
-          <ellipse cx="100" cy="45" rx="65" ry="22" />
-          <ellipse cx="100" cy="45" rx="40" ry="13" />
-        </svg>
+      <section className="mt-9" aria-label="National civic demand map">
         <h2 className="text-xl font-semibold tracking-wide">National demand map</h2>
-        <p className="mt-1 text-sm text-zinc-500">Hotspot intensity across the demonstration dataset.</p>
-        <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-8">
-            {loading ? <Skeleton className="h-[26rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
+        <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrating across the demonstration dataset.</p>
+        <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-5 lg:grid-cols-12">
+          <div className="rounded-[14px] border border-[#E7E3DB] bg-[#F8F6F1] p-4 md:col-span-3 lg:col-span-8">
+            <div className="flex items-center justify-between text-[11px] font-semibold tracking-widest text-zinc-500">
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" />
+                LIVE CIVIC SIGNALS
+              </span>
+              <span>90 DAY WINDOW</span>
+            </div>
+            <div className="mt-2">
+              {loading ? <Skeleton className="h-[26rem] w-full" /> : <Map hotspots={hotspots} selectedId={selected?.id ?? null} onSelect={selectHotspot} />}
+            </div>
           </div>
-          <div className="lg:col-span-4">
-            <div className="rounded-md border p-4">
-              <h3 className="text-sm font-semibold tracking-wide text-zinc-500">CIVICPULSE · RISING</h3>
+          <div className="md:col-span-2 lg:col-span-4">
+            <div className="rounded-xl border border-[#E7E3DB] bg-white p-4">
+              <h3 className="text-sm font-semibold tracking-wide text-zinc-500">CIVICPULSE</h3>
+              <p className="text-xs text-zinc-500">Rising civic demand <span aria-hidden="true" className="ml-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" /> <span className="font-semibold text-zinc-600">LIVE</span></p>
               {loading ? (
                 <div className="mt-2 space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : railRising.length === 0 ? (
@@ -312,12 +339,12 @@ export default function DashboardPage() {
               ) : (
                 <ul className="mt-2 space-y-2">
                   {railRising.map((p) => (
-                    <li key={p.category} className="flex items-center justify-between rounded-md bg-zinc-50 p-2 text-sm">
+                    <li key={p.category} className="group flex items-center justify-between rounded-md bg-zinc-50 p-2 text-sm transition-colors duration-150 hover:bg-zinc-100">
                       <span>
                         <span className="font-semibold">{title(p.category)}</span>
-                        <span className="block text-xs text-zinc-500">{fmtInt(p.current_count)} signals · {title(p.status)}</span>
+                        <span className="block text-xs text-zinc-500">{fmtInt(p.current_count)} signals · Rising</span>
                       </span>
-                      <span className="font-semibold text-red-700">↑ {p.trend_percent}%</span>
+                      <span className="font-semibold text-red-700 transition-transform duration-150 group-hover:translate-x-0.5">↑ {p.trend_percent}%</span>
                     </li>
                   ))}
                 </ul>
@@ -364,7 +391,7 @@ export default function DashboardPage() {
       </div>
 
       {/* PULSE CHART + DISTRIBUTION */}
-      <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="mt-14 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-md border p-4" aria-label="CivicPulse demand trend">
           <h2 className="text-lg font-semibold tracking-wide">CivicPulse</h2>
           <p className="text-xs text-zinc-500">How citizen demand is changing (30d vs prior 30d).</p>
