@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       /* ignore */
     }
-    persist({ name: email.split("@")[0] || "Citizen", email: email.trim(), role: "citizen" });
+    persist({ name: "", email: email.trim(), role: "citizen" });
     return null;
   }
 

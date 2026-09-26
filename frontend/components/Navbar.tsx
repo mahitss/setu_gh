@@ -38,7 +38,7 @@ export default function Navbar() {
           <span className="rounded border px-2 py-0.5 text-[11px] text-zinc-500">Demo Mode</span>
           {user ? (
             <>
-              <span className="text-sm text-zinc-600">Hi, {user.name}</span>
+                <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
               <button onClick={signout} className="rounded-md border px-3 py-2 text-sm">Sign out</button>
             </>
           ) : (
@@ -69,7 +69,7 @@ export default function Navbar() {
           <div className="mt-4 flex flex-col gap-2 border-t pt-4">
             {user ? (
               <>
-                <span className="text-sm text-zinc-600">Hi, {user.name}</span>
+              <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
                 <button onClick={() => { signout(); setOpen(false); }} className="rounded-md border px-4 py-2 text-sm">Sign out</button>
               </>
             ) : (
