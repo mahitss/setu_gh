@@ -50,6 +50,14 @@ export default function Home() {
   const [sim, setSim] = useState<SimPreview | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  function retry() {
+    setError(null);
+    setLoading(true);
+    setReloadKey((k) => k + 1);
+  }
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -78,9 +86,12 @@ export default function Home() {
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setError("Live data unavailable — start the backend to see civic intelligence.");
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setLoading(false);
       });
     return () => ctrl.abort();
-  }, []);
+  }, [reloadKey]);
 
   const rising = pulse.filter((p) => p.status === "rising").slice(0, 4);
   const top = hotspots[0] ?? null;
@@ -112,6 +123,9 @@ export default function Home() {
           </div>
           <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
             <HeroMap hotspots={hotspots} />
+            {!loading && hotspots.length === 0 && (
+              <p className="mt-2 text-xs text-zinc-400">Civic intelligence will appear when the data service is connected.</p>
+            )}
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-400">
               <span>Citizen signals ↓</span><span>AI understanding ↓</span><span>CivicPulse ↓</span><span>Hotspots</span>
             </div>
@@ -122,6 +136,14 @@ export default function Home() {
       {error && (
         <div className="mx-auto max-w-6xl px-6 pt-6">
           <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>
+          <button onClick={retry} className="mt-2 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
+            Retry connection
+          </button>
+        </div>
+      )}
+      {loading && !summary && (
+        <div className="mx-auto max-w-6xl px-6 pt-6">
+          <p className="text-sm text-zinc-500" role="status">Loading civic intelligence…</p>
         </div>
       )}
 
