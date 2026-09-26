@@ -52,7 +52,7 @@ export default function HotspotByIdPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-6xl px-6 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
         <Link href="/dashboard" className="mt-4 inline-block underline">Back to dashboard</Link>
       </main>
@@ -60,7 +60,7 @@ export default function HotspotByIdPage() {
   }
   if (!detail) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-6xl px-6 py-12">
         <p className="text-zinc-600">Loading hotspot…</p>
       </main>
     );

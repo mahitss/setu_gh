@@ -196,10 +196,14 @@ export default function CitizenPage() {
   }
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-6xl px-6 py-10">
       {/* HERO */}
-      <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Tell us what your community needs.</h1>
+      <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
+        <Link href="/" className="underline hover:text-black">Home</Link>
+        <span> → Citizen Voice</span>
+      </nav>
+      <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
+      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">Tell us what your community needs.</h1>
       <p className="mt-2 max-w-2xl text-zinc-600">
         Share a local problem in your own words. JanSetu turns your voice into a
         structured civic signal that can be connected to development data.

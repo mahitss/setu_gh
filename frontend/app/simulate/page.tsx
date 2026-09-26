@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import RequireAuth from "@/components/RequireAuth";
 import { STATE_DISTRICTS, apiGet, fmtInt, fmtInr, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
 
@@ -155,7 +156,8 @@ function Simulator() {
   const maxReach = Math.max(...(compare?.comparison.map((c) => c.population_reached) ?? [1]), 1);
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12">
+    <RequireAuth>
+    <main className="mx-auto max-w-6xl px-6 py-12">
       <p className="text-sm font-semibold tracking-widest text-zinc-500">INVESTMENT SCENARIO LAB</p>
       <h1 className="mt-1 text-3xl font-semibold tracking-tight">Explore prototype development scenarios using JanSetu&apos;s civic intelligence.</h1>
       <p className="mt-1 text-xs text-zinc-500">Prototype scenario estimates — not guaranteed outcomes.</p>
@@ -349,12 +351,13 @@ function Simulator() {
         <p className="mt-1">Data — citizen signals: synthetic demonstration dataset. AI — Gemini assists with language understanding and explanation. Numerical model — deterministic JanSetu simulation engine. Scenario status — prototype estimate.</p>
       </section>
     </main>
+    </RequireAuth>
   );
 }
 
 export default function SimulatePage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-3xl px-6 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
+    <Suspense fallback={<main className="mx-auto max-w-6xl px-6 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
       <Simulator />
     </Suspense>
   );

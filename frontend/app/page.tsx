@@ -105,7 +105,7 @@ export default function Home() {
         <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 px-6 py-16 lg:grid-cols-2">
           <div className="animate-[fade-up_.5s_ease-out]">
             <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
+            <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
               Turn citizen voices into development decisions.
             </h1>
             <p className="mt-4 max-w-xl text-zinc-300">

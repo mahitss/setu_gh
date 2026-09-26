@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
 import AskJanSetu from "@/components/AskJanSetu";
+import RequireAuth from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { EmergingHotspot, Hotspot, PulseItem, RecommendationOut, Summary, TopCategory } from "@/lib/api";
@@ -229,14 +230,17 @@ export default function DashboardPage() {
 
   if (error) {
     return (
+      <RequireAuth>
       <main className="mx-auto max-w-6xl px-6 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
         <p className="mt-3 text-sm text-zinc-600">The dashboard needs the backend at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}. Start it and refresh.</p>
       </main>
+      </RequireAuth>
     );
   }
 
   return (
+    <RequireAuth>
     <main className="mx-auto max-w-6xl px-6 py-8">
       {/* BREADCRUMB */}
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
@@ -254,7 +258,7 @@ export default function DashboardPage() {
 
       {/* HERO + KPI HIERARCHY */}
       <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">From citizen signals to development priorities.</h1>
+      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">From citizen signals to development priorities.</h1>
       <p className="mt-1 text-sm text-zinc-500">Synthetic demonstration dataset. Every metric below is computed from the demonstration backend.</p>
 
       {loading || !summary ? (
@@ -794,6 +798,7 @@ export default function DashboardPage() {
         </div>
       </section>
     </main>
+    </RequireAuth>
   );
 
   function emergingGap(id: string): string {
