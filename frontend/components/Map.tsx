@@ -125,7 +125,9 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
   return (
     <div>
-      <svg viewBox="0 0 100 100" className="h-[28rem] w-full rounded-md border bg-zinc-50" role="img" aria-label="Hotspot map (fallback)">
+      <svg viewBox="0 0 100 100" className="h-[28rem] w-full rounded-md border bg-zinc-50" role="img" aria-label="India demand hotspots map (fallback)">
+        <text x="50" y="7" textAnchor="middle" fontSize="4.5" fontWeight="bold" fill="#3f3f46" letterSpacing="2">INDIA</text>
+        <text x="50" y="12" textAnchor="middle" fontSize="2.4" fill="#71717a" letterSpacing="1">DEMAND HOTSPOTS</text>
         <defs>
           <filter id="hs-heat" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="2.4" />

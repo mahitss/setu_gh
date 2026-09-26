@@ -103,7 +103,7 @@ export default function HotspotDetailView({ detail, rec, compare }: {
   const simBase = `/simulate?state=${encodeURIComponent(h.state)}&district=${encodeURIComponent(h.district)}&category=${encodeURIComponent(h.category)}`;
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-12">
+    <main className="mx-auto max-w-7xl px-6 md:px-10 py-12">
       <Link href="/dashboard" className="text-sm underline">← Dashboard</Link>
 
       {/* HEADER */}

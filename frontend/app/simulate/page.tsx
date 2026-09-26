@@ -157,9 +157,9 @@ function Simulator() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto max-w-6xl px-6 py-12">
+    <main className="mx-auto max-w-7xl px-6 md:px-10 py-12">
       <p className="text-sm font-semibold tracking-widest text-zinc-500">INVESTMENT SCENARIO LAB</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Explore prototype development scenarios using JanSetu&apos;s civic intelligence.</h1>
+      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">Explore prototype development scenarios using JanSetu&apos;s civic intelligence.</h1>
       <p className="mt-1 text-xs text-zinc-500">Prototype scenario estimates — not guaranteed outcomes.</p>
 
       {/* CONTEXT */}
@@ -357,7 +357,7 @@ function Simulator() {
 
 export default function SimulatePage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-6xl px-6 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
+    <Suspense fallback={<main className="mx-auto max-w-7xl px-6 md:px-10 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
       <Simulator />
     </Suspense>
   );

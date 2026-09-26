@@ -73,7 +73,7 @@ function HotspotsPage() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
+    <main className="mx-auto max-w-7xl px-6 md:px-10 py-10">
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
         <Link href="/" className="underline hover:text-black">Home</Link>
         <span> → Hotspot intelligence</span>

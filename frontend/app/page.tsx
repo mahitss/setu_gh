@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
-import type { Hotspot, PulseItem, Summary } from "@/lib/api";
+import type { Hotspot, PulseItem, RecommendationOut, Summary } from "@/lib/api";
 
 const LAT_MIN = 8, LAT_MAX = 37, LON_MIN = 68, LON_MAX = 97;
 
@@ -48,6 +48,7 @@ export default function Home() {
   const [pulse, setPulse] = useState<PulseItem[]>([]);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [sim, setSim] = useState<SimPreview | null>(null);
+  const [rec, setRec] = useState<RecommendationOut | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +73,11 @@ export default function Home() {
         setHotspots(h.hotspots);
         const top = h.hotspots[0];
         if (top) {
+          apiGet<RecommendationOut>(
+            `/api/v1/hotspots/${encodeURIComponent(top.id)}/recommendation`, ctrl.signal
+          )
+            .then(setRec)
+            .catch(() => setRec(null));
           fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/simulate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -102,7 +108,7 @@ export default function Home() {
     <main className="flex-1">
       {/* HERO */}
       <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-8 px-6 py-16 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-6 py-16 md:px-10 lg:grid-cols-2 lg:min-h-[580px]">
           <div className="animate-[fade-up_.5s_ease-out]">
             <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
             <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -126,15 +132,18 @@ export default function Home() {
             {!loading && hotspots.length === 0 && (
               <p className="mt-2 text-xs text-zinc-400">Civic intelligence will appear when the data service is connected.</p>
             )}
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-zinc-400">
-              <span>Citizen signals ↓</span><span>AI understanding ↓</span><span>CivicPulse ↓</span><span>Hotspots</span>
-            </div>
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
+              <div><dt className="tracking-widest text-zinc-500">CITIZEN SIGNALS</dt><dd className="font-semibold text-zinc-200">{summary ? fmtInt(summary.citizen_signals) : "—"}</dd></div>
+              <div><dt className="tracking-widest text-zinc-500">AI UNDERSTANDING</dt><dd className="font-semibold text-zinc-200">{pulse.length ? `${pulse.length} categories` : "—"}</dd></div>
+              <div><dt className="tracking-widest text-zinc-500">CIVICPULSE</dt><dd className="font-semibold text-zinc-200">{rising.length ? `${rising.length} rising` : "—"}</dd></div>
+              <div><dt className="tracking-widest text-zinc-500">HOTSPOTS</dt><dd className="font-semibold text-zinc-200">{hotspots.length ? `${hotspots.length} tracked` : "—"}</dd></div>
+            </dl>
           </div>
         </div>
       </section>
 
       {error && (
-        <div className="mx-auto max-w-6xl px-6 pt-6">
+        <div className="mx-auto max-w-7xl px-6 md:px-10 pt-6">
           <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>
           <button onClick={retry} className="mt-2 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
             Retry connection
@@ -142,7 +151,7 @@ export default function Home() {
         </div>
       )}
       {loading && !summary && (
-        <div className="mx-auto max-w-6xl px-6 pt-6">
+        <div className="mx-auto max-w-7xl px-6 md:px-10 pt-6">
           <p className="text-sm text-zinc-500" role="status">Loading civic intelligence…</p>
         </div>
       )}
@@ -162,11 +171,11 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <p className="mx-auto max-w-6xl px-6 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
+        <p className="mx-auto max-w-7xl px-6 md:px-10 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
       </section>
 
       {/* PIPELINE */}
-      <section className="mx-auto max-w-6xl px-6 py-12">
+      <section className="mx-auto max-w-7xl px-6 md:px-10 py-20">
         <h2 className="text-2xl font-semibold">How JanSetu thinks</h2>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {PIPELINE.map((s, i) => (
@@ -181,7 +190,7 @@ export default function Home() {
 
       {/* INTELLIGENCE PREVIEW */}
       <section className="border-y bg-zinc-50">
-        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-6 py-12 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-semibold">National civic intelligence</h2>
             <div className="mt-4">
@@ -207,18 +216,47 @@ export default function Home() {
         </div>
       </section>
 
+      {/* CIVICPULSE CARDS */}
+      <section className="mx-auto max-w-7xl px-6 md:px-10 py-16">
+        <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">CIVICPULSE</p>
+        <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Where demand is moving</h2>
+        <p className="mt-1 text-sm text-zinc-500">30-day change vs previous 30 days, from the backend.</p>
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[...pulse].sort((a, b) => (b.trend_percent ?? -Infinity) - (a.trend_percent ?? -Infinity)).slice(0, 4).map((p) => (
+            <div key={p.category} className="rounded-md border p-4">
+              <p className="text-sm font-semibold tracking-wide">{title(p.category).toUpperCase()}</p>
+              <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
+                {(p.trend_percent ?? 0) >= 0 ? "↑" : "↓"} {trendLabel(p.trend_percent)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">{fmtInt(p.current_count)} signals · {title(p.status)}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* EVIDENCE */}
       {top && (
-        <section className="mx-auto max-w-6xl px-6 py-12">
+        <section className="mx-auto max-w-7xl px-6 md:px-10 py-20">
           <h2 className="text-2xl font-semibold">From signal to evidence</h2>
           <div className="mt-4 rounded-md border p-5">
             <p className="text-sm font-semibold tracking-widest text-zinc-500">{top.district.toUpperCase()}, {top.state.toUpperCase()}</p>
             <p className="mt-1 text-xl font-semibold">{title(top.category)}</p>
-            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
-              <div><dt className="text-zinc-500">Demand</dt><dd className="font-semibold">{fmtInt(top.signals)}</dd></div>
-              <div><dt className="text-zinc-500">Trend</dt><dd className="font-semibold">{trendLabel(top.trend_pct)}</dd></div>
-              <div><dt className="text-zinc-500">Infrastructure gap</dt><dd className="font-semibold">{top.gap_index?.toFixed(2) ?? "—"}</dd></div>
-              <div><dt className="text-zinc-500">Population context</dt><dd className="font-semibold">{fmtInt(top.population)}</dd></div>
+            <dl className="mt-3 max-w-xl space-y-2 text-sm">
+              {[
+                ["Citizen signals", fmtInt(top.signals)],
+                ["CivicPulse", trendLabel(top.trend_pct)],
+                ["Infrastructure gap", top.gap_index?.toFixed(2) ?? "—"],
+                ["Population context", fmtInt(top.population)],
+                ["Existing investment", fmtInr(top.investment_inr)],
+              ].map(([k, v], i, a) => (
+                <div key={k}>
+                  <div className="flex items-baseline justify-between rounded-md bg-zinc-50 p-3">
+                    <dt className="text-zinc-500">{k}</dt>
+                    <dd className="font-semibold">{v}</dd>
+                  </div>
+                  {i < a.length - 1 && <p className="py-0.5 pl-3 text-zinc-400">↓</p>}
+                </div>
+              ))}
             </dl>
             <h3 className="mt-4 text-sm font-semibold">Why this matters</h3>
             <ul className="mt-1 space-y-1 text-sm text-zinc-700">
@@ -233,10 +271,27 @@ export default function Home() {
         </section>
       )}
 
+      {/* RECOMMENDATION */}
+      {rec && top && (
+        <section className="mx-auto max-w-7xl px-6 md:px-10 py-16">
+          <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">WHAT JANSETU RECOMMENDS</p>
+          <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
+            {rec.recommendation.intervention}
+          </h2>
+          <p className="mt-2 text-sm text-zinc-600">
+            Evidence-backed recommendation · Evidence: {fmtInt(rec.evidence.citizen_signals)} signals ·{" "}
+            {fmtInt(rec.evidence.population_affected)} affected · confidence {rec.recommendation.confidence.toFixed(2)}
+          </p>
+          <Link href={hotspotHref(top)} className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
+            Open hotspot evidence →
+          </Link>
+        </section>
+      )}
+
       {/* SIMULATOR */}
       {sim && top && (
         <section className="border-y bg-zinc-50">
-          <div className="mx-auto max-w-6xl px-6 py-12">
+          <div className="mx-auto max-w-7xl px-6 md:px-10 py-20">
             <h2 className="text-2xl font-semibold">What if we invest?</h2>
             <p className="mt-1 text-sm text-zinc-600">
               JanSetu doesn&apos;t stop at identifying problems. It lets policymakers explore prototype intervention scenarios.
@@ -264,7 +319,7 @@ export default function Home() {
       )}
 
       {/* CITIZEN CTA */}
-      <section className="mx-auto max-w-6xl px-6 py-12 text-center">
+      <section className="mx-auto max-w-7xl px-6 md:px-10 py-12 text-center">
         <h2 className="text-2xl font-semibold">Your community already knows what needs attention.</h2>
         <p className="mt-2 text-zinc-600">JanSetu turns those voices into structured civic intelligence.</p>
         <Link href="/citizen" className="mt-6 inline-block rounded-md bg-black px-6 py-3 text-sm text-white">
@@ -274,7 +329,7 @@ export default function Home() {
 
       {/* TRANSPARENCY */}
       <section className="border-t">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-4 px-6 py-8 text-sm lg:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-8 md:px-10 text-sm lg:grid-cols-4">
           <div><p className="font-semibold">AI</p><p className="text-zinc-500">Google Gemini</p></div>
           <div><p className="font-semibold">Data</p><p className="text-zinc-500">Synthetic demonstration dataset</p></div>
           <div><p className="font-semibold">Calculations</p><p className="text-zinc-500">Deterministic backend engines</p></div>

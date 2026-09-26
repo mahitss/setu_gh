@@ -231,7 +231,7 @@ export default function DashboardPage() {
   if (error) {
     return (
       <RequireAuth>
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-7xl px-6 md:px-10 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
         <p className="mt-3 text-sm text-zinc-600">The dashboard needs the backend at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}. Start it and refresh.</p>
       </main>
@@ -241,7 +241,7 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="mx-auto max-w-7xl px-6 md:px-10 py-8">
       {/* BREADCRUMB */}
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
         <button className="underline hover:text-black" onClick={() => selectState("")}>India</button>

@@ -20,7 +20,7 @@ export default function Navbar() {
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex max-w-6xl items-center gap-x-6 px-6 py-3">
+      <div className="mx-auto flex max-w-7xl items-center gap-x-6 px-6 py-3 md:px-10">
         <Link href="/" className="leading-tight" aria-label="JanSetu home">
           <span className="block text-base font-bold tracking-widest">JANSETU</span>
           <span className="block text-[11px] text-zinc-500">AI Civic Intelligence for India</span>
