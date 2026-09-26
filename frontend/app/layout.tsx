@@ -30,7 +30,7 @@ function SiteNav() {
           <Link className="hover:underline" href="/">Overview</Link>
           <Link className="hover:underline" href="/citizen">Citizen Voice</Link>
           <Link className="hover:underline" href="/dashboard">Civic Intelligence</Link>
-          <Link className="hover:underline" href="/dashboard">Hotspots</Link>
+          <Link className="hover:underline" href="/dashboard#hotspots">Hotspots</Link>
           <Link className="hover:underline" href="/simulate">Simulator</Link>
         </nav>
         <div className="ml-auto flex items-center gap-3">

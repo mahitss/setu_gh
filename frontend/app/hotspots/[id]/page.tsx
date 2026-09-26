@@ -16,7 +16,10 @@ export default function HotspotByIdPage() {
 
   useEffect(() => {
     const ctrl = new AbortController();
-    const base = `/api/v1/hotspots/${encodeURIComponent(params.id)}`;
+    // useParams decodes percent-encoding, but decode once more if it arrives raw —
+    // either way `raw` ends up the canonical id and is safely re-encoded below.
+    const raw = params.id.includes("%") ? decodeURIComponent(params.id) : params.id;
+    const base = `/api/v1/hotspots/${encodeURIComponent(raw)}`;
     apiGet<HotspotDetail>(base, ctrl.signal)
       .then((d) => {
         setDetail(d);

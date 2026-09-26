@@ -488,7 +488,7 @@ export default function DashboardPage() {
       )}
 
       {/* HOTSPOT TABLE */}
-      <h2 className="mt-8 text-xl font-semibold">Hotspots</h2>
+      <h2 id="hotspots" className="mt-8 text-xl font-semibold scroll-mt-20">Hotspots</h2>
       <div className="mt-3 flex flex-wrap gap-3 text-sm">
         <label>State{" "}
           <select className="rounded-md border p-1.5" value={fState} onChange={(e) => { const v = e.target.value; setFState(v); setFDistrict(""); refetch({ state: v, district: "", category: fCategory, priority: fPriority }); }}>
