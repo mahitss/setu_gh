@@ -162,7 +162,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-        <p className="mx-auto max-w-6xl px-6 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load live from the backend.</p>
+        <p className="mx-auto max-w-6xl px-6 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
       </section>
 
       {/* PIPELINE */}

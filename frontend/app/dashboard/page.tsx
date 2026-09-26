@@ -255,7 +255,7 @@ export default function DashboardPage() {
       {/* HERO + KPI HIERARCHY */}
       <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
       <h1 className="mt-1 text-3xl font-semibold tracking-tight">From citizen signals to development priorities.</h1>
-      <p className="mt-1 text-sm text-zinc-500">Synthetic demonstration dataset. Every metric below is computed live from APIs.</p>
+      <p className="mt-1 text-sm text-zinc-500">Synthetic demonstration dataset. Every metric below is computed from the demonstration backend.</p>
 
       {loading || !summary ? (
         <div className="mt-5 grid grid-cols-3 gap-4">
@@ -716,7 +716,7 @@ export default function DashboardPage() {
 
       {/* RECENT SIGNALS */}
       <h2 className="mt-8 text-xl font-semibold">What citizens are saying</h2>
-      <p className="mt-1 text-sm text-zinc-500">Actual recent reports from the database. No personal information collected.</p>
+      <p className="mt-1 text-sm text-zinc-500">Recent demonstration signals from the dataset. No personal information is displayed.</p>
       {loading ? (
         <div className="mt-3 space-y-2"><Skeleton className="h-14 w-full" /><Skeleton className="h-14 w-full" /></div>
       ) : (
