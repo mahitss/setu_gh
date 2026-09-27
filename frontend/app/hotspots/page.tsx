@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/components/RequireAuth";
+import Map from "@/components/Map";
 import { Breadcrumb, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
@@ -20,6 +21,7 @@ function HotspotsPage() {
   const [fPriority, setFPriority] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function load(signal: AbortSignal, filters: Record<string, string>) {
     const q = new URLSearchParams({ limit: "50" });
@@ -82,7 +84,7 @@ function HotspotsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1480px] px-5 md:px-8 min-[1440px]:px-10 py-8">
+    <main className="mx-auto w-full max-w-[1280px] px-5 md:px-8 min-[1440px]:px-10 py-8">
       <Breadcrumb trail={[["Home", "/"], ["Hotspot intelligence"]]} />
       <div className="mt-2">
         <PageHeader
@@ -117,6 +119,14 @@ function HotspotsPage() {
             {PRIORITIES.map((p) => <option key={p} value={p}>{title(p)}</option>)}
           </select>
         </label>
+      </div>
+
+      <div className="mt-4">
+        {loading ? (
+          <Skeleton className="h-[26rem] w-full" />
+        ) : (
+          <Map hotspots={hotspots} selectedId={selectedId} onSelect={setSelectedId} />
+        )}
       </div>
 
       {error && <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}

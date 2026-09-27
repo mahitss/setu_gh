@@ -182,11 +182,11 @@ function Simulator() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto max-w-7xl px-6 md:px-10 py-12">
+    <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <p className="text-sm font-semibold tracking-widest text-zinc-500">INVESTMENT SCENARIO LAB</p>
-          <h1 className="mt-1 font-serif text-4xl font-semibold tracking-tight">Model development interventions before committing resources.</h1>
+          <h1 className="mt-1 text-4xl font-semibold tracking-tight">Model development interventions before committing resources.</h1>
           <p className="mt-3 max-w-xl text-zinc-600">
             Explore prototype investment scenarios using JanSetu&apos;s civic intelligence,
             infrastructure gaps and citizen demand. What could change if we invest differently?
@@ -208,7 +208,7 @@ function Simulator() {
         <h2 className="text-sm font-semibold tracking-widest text-zinc-500">DISTRICT INTELLIGENCE</h2>
         {context ? (
           <>
-            <p className="mt-2 font-serif text-2xl font-semibold">{context.district}</p>
+            <p className="mt-2 text-2xl font-semibold">{context.district}</p>
             <p className="text-sm text-zinc-500">{context.state}</p>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
               <div><dd className="text-2xl font-semibold">{title(context.category)}</dd><dt className="mt-1 text-xs text-zinc-500">Primary need</dt></div>
@@ -226,7 +226,7 @@ function Simulator() {
 
       {/* BUILDER */}
       <section id="scenario-builder" className="mt-8 rounded-md border p-6" aria-label="Scenario builder">
-        <h2 className="font-serif text-2xl font-semibold">Build a scenario</h2>
+        <h2 className="text-2xl font-semibold">Build a scenario</h2>
         <p className="mt-1 text-sm text-zinc-600">Choose where and how much to invest. JanSetu calculates a prototype impact estimate from the selected district context.</p>
         <h3 className="mt-6 text-xs font-semibold tracking-widest text-zinc-500">STEP 01 — LOCATION</h3>
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -252,7 +252,7 @@ function Simulator() {
         </div>
         <h3 className="mt-6 text-xs font-semibold tracking-widest text-zinc-500">STEP 03 — BUDGET</h3>
         <p className="mt-3 text-sm text-zinc-500">Budget allocation</p>
-        <p className="font-serif text-4xl font-semibold">₹{budgetCr} Cr</p>
+        <p className="text-4xl font-semibold tabular-nums">₹{budgetCr} Cr</p>
         <input id="s-budget" type="range" min={10} max={500} step={5} value={Math.min(500, Math.max(10, budgetCr))}
           className="mt-3 w-full accent-black" disabled={loading} onChange={(e) => onSlider(Number(e.target.value))}
           aria-label="Budget in crore rupees" />
@@ -281,10 +281,10 @@ function Simulator() {
         <>
           <section className="mt-8 rounded-md border border-zinc-300 p-6" aria-label="Scenario outcome">
             <p className="text-xs font-semibold tracking-widest text-zinc-500">SCENARIO OUTCOME</p>
-            <p className="mt-2 font-serif text-4xl font-semibold">₹{result.scenario.budget_cr} Cr</p>
+            <p className="mt-2 text-4xl font-semibold tabular-nums">₹{result.scenario.budget_cr} Cr</p>
             <p className="mt-1 text-lg">{title(result.scenario.intervention)}</p>
             <p className="text-sm text-zinc-500">Prototype estimate</p>
-            <p key={result.estimate.population_reached} className="mt-4 font-serif text-5xl font-semibold animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
+            <p key={result.estimate.population_reached} className="mt-4 text-5xl font-semibold tabular-nums animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
             <p className="text-sm text-zinc-500">people potentially reached</p>
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
               <div className="rounded-md bg-zinc-50 p-4">
@@ -465,7 +465,7 @@ function Simulator() {
 
 export default function SimulatePage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-7xl px-6 md:px-10 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
+    <Suspense fallback={<main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
       <Simulator />
     </Suspense>
   );

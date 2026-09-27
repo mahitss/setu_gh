@@ -238,7 +238,7 @@ export default function DashboardPage() {
   if (error) {
     return (
       <RequireAuth>
-      <main className="mx-auto max-w-[1240px] px-6 md:px-10 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
         <p className="mt-3 text-sm text-zinc-600">The dashboard needs the backend at {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}. Start it and refresh.</p>
         <button onClick={retry} className="mt-3 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
@@ -251,7 +251,7 @@ export default function DashboardPage() {
 
   return (
     <RequireAuth>
-    <main className="mx-auto w-full max-w-[1480px] px-5 md:px-6 min-[1440px]:px-10 py-8">
+    <main className="mx-auto w-full max-w-[1280px] px-5 md:px-6 min-[1440px]:px-10 py-8">
       {/* BREADCRUMB */}
       <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
         <button className="underline hover:text-black" onClick={() => selectState("")}>India</button>
@@ -269,7 +269,7 @@ export default function DashboardPage() {
 
       {/* HERO + KPI HIERARCHY */}
       <p className="mt-6 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · NATIONAL CIVIC INTELLIGENCE</p>
-      <h1 className="mt-3 max-w-[850px] font-serif text-[clamp(44px,4vw,60px)] font-bold leading-[1.02] tracking-tight">From citizen signals<br />to development priorities.</h1>
+      <h1 className="mt-3 max-w-[850px] text-[clamp(44px,4vw,60px)] font-bold leading-[1.02] tracking-tight">From citizen signals<br />to development priorities.</h1>
       <p className="mt-[18px] max-w-[760px] text-sm text-zinc-600">
         Every metric is computed from the demonstration backend. Citizen signals,
         infrastructure context and investment data are combined to surface emerging development needs.

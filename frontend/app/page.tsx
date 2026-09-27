@@ -150,7 +150,7 @@ export default function Home() {
     <main className="flex-1">
       {/* HERO */}
       <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-8 px-6 py-16 md:px-10 lg:grid-cols-2 lg:min-h-[580px]">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 px-6 py-16 md:px-10 lg:grid-cols-2 lg:min-h-[580px]">
           <div className="animate-[fade-up_.5s_ease-out]">
             <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
             <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -185,7 +185,7 @@ export default function Home() {
       </section>
 
       {error && (
-        <div className="mx-auto max-w-7xl px-6 md:px-10 pt-6">
+        <div className="mx-auto max-w-[1280px] px-6 md:px-10 pt-6">
           <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>
           <button onClick={retry} className="mt-2 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
             Retry connection
@@ -193,7 +193,7 @@ export default function Home() {
         </div>
       )}
       {loading && !summary && (
-        <div className="mx-auto max-w-7xl px-6 md:px-10 pt-6">
+        <div className="mx-auto max-w-[1280px] px-6 md:px-10 pt-6">
           <p className="text-sm text-zinc-500" role="status">
             <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#D99A18]" aria-hidden="true" />
             {loadMsg}
@@ -203,7 +203,7 @@ export default function Home() {
 
       {/* DATA STRIP */}
       <section className="border-b">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-8 md:px-10 lg:grid-cols-4">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-4 px-6 py-8 md:px-10 lg:grid-cols-4">
           <div>
             <p className="text-3xl font-semibold">
               {summary ? <><CountUp value={summary.citizen_signals} format={fmtInt} />+</> : "—"}
@@ -223,11 +223,11 @@ export default function Home() {
             <p className="mt-1 text-sm text-zinc-500">Intelligence window</p>
           </div>
         </div>
-        <p className="mx-auto max-w-7xl px-6 md:px-10 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
+        <p className="mx-auto max-w-[1280px] px-6 md:px-10 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
       </section>
 
       {/* PIPELINE */}
-      <section className="mx-auto max-w-7xl px-6 md:px-10 py-20">
+      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
         <h2 className="text-2xl font-semibold">How JanSetu thinks</h2>
         <ol className="mt-5 flex flex-wrap items-stretch gap-0">
           {PIPELINE.map(([s, d], i) => (
@@ -250,7 +250,7 @@ export default function Home() {
 
       {/* INTELLIGENCE PREVIEW */}
       <section className="border-y bg-[#F6F4EF]">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-semibold">National civic intelligence</h2>
             <div className="mt-4">
@@ -277,7 +277,7 @@ export default function Home() {
       </section>
 
       {/* CIVICPULSE CARDS */}
-      <section className="mx-auto max-w-7xl px-6 md:px-10 py-16">
+      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-16">
         <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">CIVICPULSE</p>
         <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Where demand is moving</h2>
         <p className="mt-1 text-sm text-zinc-500">30-day change vs previous 30 days, from the backend.</p>
@@ -296,7 +296,7 @@ export default function Home() {
 
       {/* EVIDENCE */}
       {top && (
-        <section className="mx-auto max-w-7xl px-6 md:px-10 py-20">
+        <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
           <h2 className="text-2xl font-semibold">From signal to evidence</h2>
           <div className="mt-4 rounded-md border p-5">
             <p className="text-sm font-semibold tracking-widest text-zinc-500">{top.district.toUpperCase()}, {top.state.toUpperCase()}</p>
@@ -333,7 +333,7 @@ export default function Home() {
 
       {/* RECOMMENDATION */}
       {rec && top && (
-        <section className="mx-auto max-w-7xl px-6 md:px-10 py-16">
+        <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-16">
           <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">WHAT JANSETU RECOMMENDS</p>
           <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
             {rec.recommendation.intervention}
@@ -351,7 +351,7 @@ export default function Home() {
       {/* SIMULATOR */}
       {sim && top && (
         <section className="border-y bg-[#F6F4EF]">
-          <div className="mx-auto max-w-7xl px-6 md:px-10 py-20">
+          <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
             <h2 className="text-2xl font-semibold">What if we invest?</h2>
             <p className="mt-1 text-sm text-zinc-600">
               JanSetu doesn&apos;t stop at identifying problems. It lets policymakers explore prototype intervention scenarios.
@@ -379,7 +379,7 @@ export default function Home() {
       )}
 
       {/* CITIZEN CTA */}
-      <section className="mx-auto max-w-7xl px-6 md:px-10 py-12 text-center">
+      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-12 text-center">
         <h2 className="text-2xl font-semibold">Your community already knows what needs attention.</h2>
         <p className="mt-2 text-zinc-600">JanSetu turns those voices into structured civic intelligence.</p>
         <Link href="/citizen" className="mt-6 inline-block rounded-md bg-black px-6 py-3 text-sm text-white">
@@ -389,7 +389,7 @@ export default function Home() {
 
       {/* TRANSPARENCY */}
       <section className="border-t">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-4 px-6 py-8 md:px-10 text-sm lg:grid-cols-4">
+        <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-4 px-6 py-8 md:px-10 text-sm lg:grid-cols-4">
           <div><p className="font-semibold">AI</p><p className="text-zinc-500">Google Gemini</p></div>
           <div><p className="font-semibold">Data</p><p className="text-zinc-500">Synthetic demonstration dataset</p></div>
           <div><p className="font-semibold">Calculations</p><p className="text-zinc-500">Deterministic backend engines</p></div>

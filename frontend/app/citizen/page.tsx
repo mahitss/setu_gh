@@ -266,7 +266,7 @@ export default function CitizenPage() {
   const autoStage = !signal ? 0 : 4;
 
   return (
-    <main className="mx-auto max-w-7xl px-6 md:px-10 py-10">
+    <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-10">
       {/* HERO */}
       <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
       <h1 className="mt-1 max-w-3xl font-serif text-4xl font-semibold tracking-tight">
@@ -534,7 +534,7 @@ export default function CitizenPage() {
       )}
 
       {/* PIPELINE */}
-      <section className="mx-auto mt-10 max-w-7xl">
+      <section className="mx-auto mt-10 max-w-[1280px]">
         <h2 className="font-serif text-2xl font-semibold">How JanSetu understands you</h2>
         <ol className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {PIPELINE_STAGES.map(([t, d], i) => {
@@ -558,7 +558,7 @@ export default function CitizenPage() {
       </section>
 
       {/* TRANSPARENCY */}
-      <section className="mx-auto mt-8 max-w-7xl rounded-xl border border-[#E7E3DB] bg-white p-6">
+      <section className="mx-auto mt-8 max-w-[1280px] rounded-xl border border-[#E7E3DB] bg-white p-6">
         <h2 className="text-sm font-semibold tracking-widest text-zinc-500">HOW JANSETU USES AI</h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-600">
           Gemini helps understand and structure citizen language. Deterministic backend

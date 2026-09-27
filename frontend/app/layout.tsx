@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 function SiteFooter() {
   return (
     <footer className="mt-auto border-t bg-[#F6F4EF]">
-      <div className="mx-auto max-w-7xl px-6 md:px-10 py-8 text-sm">
+      <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-8 text-sm">
         <p className="font-bold tracking-widest">JANSETU</p>
         <p className="mt-1 text-zinc-500">AI Civic Intelligence for India</p>
         <p className="mt-1 text-zinc-500">Built to help communities turn lived experience into structured civic intelligence.</p>
@@ -63,6 +63,7 @@ function SiteFooter() {
         <p className="mt-6 border-t pt-4 text-xs text-zinc-500">
           Disclosure: Synthetic demonstration dataset. Values shown are prototype data and are not official statistics.
         </p>
+        <p className="mt-2 text-xs text-zinc-400">© JanSetu</p>
       </div>
     </footer>
   );

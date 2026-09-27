@@ -31,7 +31,7 @@ export default function Navbar() {
 
   return (
     <header className="border-b">
-      <div className="mx-auto flex h-[72px] w-full max-w-[1440px] items-center gap-x-6 px-5 md:px-8 min-[1440px]:px-10">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1280px] items-center gap-x-6 px-5 md:px-8 min-[1440px]:px-10">
         <Link href="/" className="leading-tight" aria-label="JanSetu home">
           <span className="block text-base font-bold tracking-widest">JANSETU</span>
           <span className="block text-[11px] text-zinc-500">AI Civic Intelligence for India</span>

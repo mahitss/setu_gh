@@ -27,10 +27,18 @@ function SignUpForm() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <div className="rounded-md border p-6">
+    <main className="mx-auto w-full max-w-[1280px] px-5 md:px-8 min-[1440px]:px-10 py-10">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="hidden rounded-xl border border-[#E7E3DB] bg-zinc-950 p-8 text-white lg:block">
+          <p className="text-sm font-bold tracking-widest">JANSETU</p>
+          <p className="mt-4 font-serif text-3xl font-semibold leading-tight">Join the civic<br />intelligence network.</p>
+          <p className="mt-3 max-w-sm text-sm text-zinc-300">
+            Citizens report needs. Analysts turn them into evidence-backed priorities.
+          </p>
+        </div>
+        <div className="rounded-md border p-6">
         <p className="text-center text-sm font-semibold tracking-widest text-zinc-500">JANSETU</p>
-        <h1 className="mt-2 text-center font-serif text-2xl font-semibold">Create your JanSetu account</h1>
+        <h1 className="mt-2 text-center text-2xl font-semibold">Create your JanSetu account</h1>
         <p className="mt-1 text-center text-xs text-zinc-500">
           Demonstration account only — stored in this browser, replaceable by Firebase/Auth later.
         </p>
@@ -65,6 +73,7 @@ function SignUpForm() {
         <p className="mt-4 text-center text-sm">
           <Link href="/signin" className="underline">Already have an account? Sign in</Link>
         </p>
+        </div>
       </div>
     </main>
   );
