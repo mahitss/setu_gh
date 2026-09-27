@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Map from "@/components/Map";
 import AskJanSetu from "@/components/AskJanSetu";
+import { EmptyState } from "@/components/ui";
 import RequireAuth from "@/components/RequireAuth";
 import { Button } from "@/components/ui/button";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
@@ -556,7 +557,12 @@ export default function DashboardPage() {
       {loading ? (
         <div className="mt-3 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
       ) : hotspots.length === 0 ? (
-        <p className="mt-3 rounded-md border p-4 text-sm text-zinc-600">No hotspots match these filters.</p>
+        <div className="mt-3">
+          <EmptyState
+            title="No hotspots match these filters"
+            body="Widen the state, district, category or priority selection to see the deterministic ranking again."
+          />
+        </div>
       ) : (
         <div className="mt-3 overflow-x-auto rounded-md border">
           <table className="w-full text-left text-sm">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui";
 import Map from "@/components/Map";
 import { fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
@@ -155,9 +156,12 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
           </dl>
 
           {result.matches.length === 0 ? (
-            <p className="mt-4 rounded-md border p-4 text-sm text-zinc-600">
-              No matching hotspots were found for these filters. Try a broader sector or remove the location.
-            </p>
+            <div className="mt-4">
+              <EmptyState
+                title="No matching hotspots found"
+                body="No districts match these interpreted filters. Try a broader sector or remove the location."
+              />
+            </div>
           ) : (
             <>
               <p className="mt-4 text-sm text-zinc-600">

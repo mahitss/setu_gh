@@ -275,7 +275,15 @@ function Simulator() {
       </section>
 
       {error && <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
-      {loading && <p className="mt-4 text-sm text-zinc-500">Simulating…</p>}
+      {loading && (
+        <div className="mt-4 rounded-md border border-[#E5E7EB] bg-white p-4" role="status" aria-live="polite">
+          <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU INTELLIGENCE</p>
+          <p className="mt-2 text-sm text-zinc-600">
+            <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#635BFF]" />
+            Calculating scenario — reading district baseline, applying intervention model…
+          </p>
+        </div>
+      )}
 
       {result && (
         <>
