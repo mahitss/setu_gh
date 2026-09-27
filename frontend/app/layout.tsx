@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 function SiteFooter() {
   return (
-    <footer className="mt-auto border-t bg-[#F6F4EF]">
+    <footer className="mt-auto border-t bg-[#F1F3F5]">
       <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-8 text-sm">
         <p className="font-bold tracking-widest">JANSETU</p>
         <p className="mt-1 text-zinc-500">AI Civic Intelligence for India</p>

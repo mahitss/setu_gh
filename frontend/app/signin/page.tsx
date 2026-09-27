@@ -26,7 +26,7 @@ function SignInForm() {
   return (
     <main className="mx-auto w-full max-w-[1280px] px-5 md:px-8 min-[1440px]:px-10 py-10">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="hidden rounded-xl border border-[#E7E3DB] bg-zinc-950 p-8 text-white lg:block">
+        <div className="hidden rounded-xl border border-[#E5E7EB] bg-zinc-950 p-8 text-white lg:block">
           <p className="text-sm font-bold tracking-widest">JANSETU</p>
           <p className="mt-4 font-serif text-3xl font-semibold leading-tight">Civic intelligence,<br />built on citizen voices.</p>
           <p className="mt-3 max-w-sm text-sm text-zinc-300">

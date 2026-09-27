@@ -23,11 +23,11 @@ const LANGUAGE_NAMES: Record<string, string> = {
 };
 
 const ANALYSIS_STAGES = [
-  "Understanding language",
-  "Identifying civic category",
-  "Detecting severity",
-  "Connecting location",
-  "Structuring civic signal",
+  "Listening",
+  "Understanding",
+  "Locating",
+  "Structuring",
+  "Ready",
 ];
 
 const PIPELINE_STAGES: [string, string][] = [
@@ -269,7 +269,7 @@ export default function CitizenPage() {
     <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-10">
       {/* HERO */}
       <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
-      <h1 className="mt-1 max-w-3xl font-serif text-4xl font-semibold tracking-tight">
+      <h1 className="mt-1 max-w-3xl text-4xl font-semibold tracking-tight">
         Tell us what&apos;s happening in your community.
       </h1>
       <p className="mt-2 max-w-2xl text-zinc-600">
@@ -280,9 +280,9 @@ export default function CitizenPage() {
       {/* WORKSPACE */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* LEFT — INPUT */}
-        <section aria-labelledby="input-heading" className="rounded-xl border border-[#E7E3DB] bg-white p-6">
+        <section aria-labelledby="input-heading" className="rounded-xl border border-[#E5E7EB] bg-white p-6">
           <h2 id="input-heading" className="text-sm font-semibold tracking-widest text-zinc-500">YOUR COMMUNITY SIGNAL</h2>
-          <div role="tablist" aria-label="Input mode" className="mt-3 inline-flex rounded-md border border-[#E7E3DB] p-1 text-sm">
+          <div role="tablist" aria-label="Input mode" className="mt-3 inline-flex rounded-md border border-[#E5E7EB] p-1 text-sm">
             {(["text", "voice"] as const).map((m) => (
               <button
                 key={m}
@@ -300,7 +300,7 @@ export default function CitizenPage() {
             <div className="mt-4">
               <div className="flex items-center gap-2 text-sm">
                 <label htmlFor="lang">Language</label>
-                <select id="lang" className="rounded-md border border-[#E7E3DB] p-1.5" value={lang}
+                <select id="lang" className="rounded-md border border-[#E5E7EB] p-1.5" value={lang}
                   onChange={(e) => setLang(e.target.value)} disabled={loading}>
                   <option value="auto">Auto detect</option>
                   <option value="hi">Hindi</option>
@@ -313,7 +313,7 @@ export default function CitizenPage() {
               <label className="mt-3 block text-sm font-medium" htmlFor="issue">Describe what your community is experiencing…</label>
               <textarea
                 id="issue"
-                className="mt-2 min-h-40 w-full rounded-md border border-[#E7E3DB] p-3 text-base focus:border-black focus:outline-none"
+                className="mt-2 min-h-40 w-full rounded-md border border-[#E5E7EB] p-3 text-base focus:border-black focus:outline-none"
                 rows={7}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
@@ -323,8 +323,8 @@ export default function CitizenPage() {
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-xs text-zinc-500">{text.length} / 5000</span>
                 <span className="flex items-center gap-2">
-                  <button onClick={() => setMode("voice")} className="rounded-md border border-[#E7E3DB] px-3 py-2 text-sm hover:bg-zinc-50" title="Switch to voice input">🎙 Voice</button>
-                  <select aria-label="Language" className="rounded-md border border-[#E7E3DB] p-2 text-sm" value={lang}
+                  <button onClick={() => setMode("voice")} className="rounded-md border border-[#E5E7EB] px-3 py-2 text-sm hover:bg-zinc-50" title="Switch to voice input">🎙 Voice</button>
+                  <select aria-label="Language" className="rounded-md border border-[#E5E7EB] p-2 text-sm" value={lang}
                     onChange={(e) => setLang(e.target.value)} disabled={loading}>
                     <option value="auto">Auto</option>
                     <option value="hi">HI</option>
@@ -340,7 +340,7 @@ export default function CitizenPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-4 rounded-md border border-[#E7E3DB] bg-[#F6F4EF] p-6 text-center">
+            <div className="mt-4 rounded-md border border-[#E5E7EB] bg-[#F1F3F5] p-6 text-center">
               <div aria-hidden="true" className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${phase === "recording" ? "bg-red-700" : "bg-black"}`}>
                 <span className={`text-xl text-white ${phase === "recording" ? "animate-pulse" : ""}`}>●</span>
               </div>
@@ -355,7 +355,7 @@ export default function CitizenPage() {
               </div>
               <div className="mt-3 flex items-center justify-center gap-2 text-sm">
                 <label htmlFor="voice-lang">Voice language</label>
-                <select id="voice-lang" className="rounded-md border border-[#E7E3DB] bg-white p-1.5" value={voiceLang}
+                <select id="voice-lang" className="rounded-md border border-[#E5E7EB] bg-white p-1.5" value={voiceLang}
                   onChange={(e) => setVoiceLang(e.target.value)} disabled={phase === "recording" || phase === "processing"}>
                   <option value="hi-IN">Hindi</option>
                   <option value="en-IN">English (India)</option>
@@ -379,7 +379,7 @@ export default function CitizenPage() {
               {phase === "complete" && (
                 <div className="mt-4 text-left">
                   <label className="block text-sm font-medium" htmlFor="transcript">Your transcript (editable)</label>
-                  <textarea id="transcript" className="mt-2 w-full rounded-md border border-[#E7E3DB] bg-white p-3 text-base" rows={4}
+                  <textarea id="transcript" className="mt-2 w-full rounded-md border border-[#E5E7EB] bg-white p-3 text-base" rows={4}
                     value={transcript} onChange={(e) => setTranscript(e.target.value)} disabled={loading} />
                   <Button className="mt-3" onClick={() => analyzeText(transcript)} disabled={loading}>
                     {loading ? "Analyzing…" : "Analyze concern →"}
@@ -390,7 +390,7 @@ export default function CitizenPage() {
           )}
 
           {/* LOCATION */}
-          <div className="mt-6 border-t border-[#E7E3DB] pt-4">
+          <div className="mt-6 border-t border-[#E5E7EB] pt-4">
             <h3 className="text-sm font-semibold tracking-wide">WHERE IS THIS HAPPENING?</h3>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
@@ -414,7 +414,7 @@ export default function CitizenPage() {
             <input id="locality" className="mt-1 w-full rounded-md border border-[#d8d8d8] p-3" value={locality}
               onChange={(e) => setLocality(e.target.value)} placeholder="Village / ward" disabled={loading} />
             <div className="mt-2 flex items-center gap-2 text-sm">
-              <button onClick={useMyLocation} className="rounded-md border border-[#E7E3DB] px-3 py-1.5 hover:bg-zinc-50">
+              <button onClick={useMyLocation} className="rounded-md border border-[#E5E7EB] px-3 py-1.5 hover:bg-zinc-50">
                 Use my location
               </button>
               {coords && <span className="text-xs text-zinc-500">📍 {coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}</span>}
@@ -428,7 +428,7 @@ export default function CitizenPage() {
         </section>
 
         {/* RIGHT — AI PANEL */}
-        <aside aria-label="JanSetu AI interpretation" className="rounded-xl border border-[#E7E3DB] bg-white p-6 lg:sticky lg:top-6 lg:self-start">
+        <aside aria-label="JanSetu AI interpretation" className="rounded-xl border border-[#E5E7EB] bg-white p-6 lg:sticky lg:top-6 lg:self-start">
           <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-zinc-500">
             <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#635BFF]" />
             JANSETU AI
@@ -481,14 +481,14 @@ export default function CitizenPage() {
       {/* RESULT */}
       {signal && (
         <section aria-labelledby="result-heading" className="mx-auto mt-8 max-w-3xl">
-          <div className="rounded-xl border border-[#E7E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          <div className="rounded-xl border border-[#E5E7EB] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU UNDERSTANDING</p>
             <h2 id="result-heading" className="mt-1 text-xl font-semibold">Your concern has been heard. ✓</h2>
             <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">CATEGORY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.category)}</dd></div>
-              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">SEVERITY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.severity)} priority</dd></div>
-              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">LOCATION</dt><dd className="mt-1 text-lg font-semibold">{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
-              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">AI CONFIDENCE</dt><dd className="mt-1 text-lg font-semibold">{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
+              <div className="rounded-md bg-[#F1F3F5] p-3"><dt className="text-xs text-zinc-500">CATEGORY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.category)}</dd></div>
+              <div className="rounded-md bg-[#F1F3F5] p-3"><dt className="text-xs text-zinc-500">SEVERITY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.severity)} priority</dd></div>
+              <div className="rounded-md bg-[#F1F3F5] p-3"><dt className="text-xs text-zinc-500">LOCATION</dt><dd className="mt-1 text-lg font-semibold">{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
+              <div className="rounded-md bg-[#F1F3F5] p-3"><dt className="text-xs text-zinc-500">AI CONFIDENCE</dt><dd className="mt-1 text-lg font-semibold">{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
             </dl>
             <p className="mt-3 text-sm"><span className="font-medium">Language:</span> {LANGUAGE_NAMES[signal.language] ?? signal.language} · <span className="font-medium">Signal ID:</span> #{signal.id}{submittedAt ? <> · <span className="font-medium">Submitted:</span> {submittedAt}</> : null}</p>
             <p className="mt-2 text-sm text-zinc-600">“{signal.summary ?? submittedText.slice(0, 160)}”</p>
@@ -501,29 +501,29 @@ export default function CitizenPage() {
                 View how this contributes to civic intelligence →
               </Link>
               {exploreId && (
-                <Link href={`/hotspots/${encodeURIComponent(exploreId)}`} className="rounded-md border border-[#E7E3DB] px-4 py-2 text-sm hover:bg-zinc-50">
+                <Link href={`/hotspots/${encodeURIComponent(exploreId)}`} className="rounded-md border border-[#E5E7EB] px-4 py-2 text-sm hover:bg-zinc-50">
                   Explore this area →
                 </Link>
               )}
-              <button onClick={resetAll} className="rounded-md border border-[#E7E3DB] px-4 py-2 text-sm hover:bg-zinc-50">
+              <button onClick={resetAll} className="rounded-md border border-[#E5E7EB] px-4 py-2 text-sm hover:bg-zinc-50">
                 Submit another signal
               </button>
             </div>
           </div>
 
           {/* SIGNAL VIZ */}
-          <div className="mt-4 rounded-xl border border-[#E7E3DB] bg-white p-6">
+          <div className="mt-4 rounded-xl border border-[#E5E7EB] bg-white p-6">
             <p className="text-xs font-semibold tracking-widest text-zinc-500">YOUR VOICE → CIVIC SIGNAL</p>
             <ol className="mt-3 space-y-2 text-sm">
-              <li className="rounded-md bg-[#F6F4EF] p-3">
+              <li className="rounded-md bg-[#F1F3F5] p-3">
                 <p className="text-xs text-zinc-500">Citizen words</p>
                 <p className="mt-1">“{submittedText.slice(0, 120)}{submittedText.length > 120 ? "…" : ""}”</p>
               </li>
-              <li className="rounded-md bg-[#F6F4EF] p-3">
+              <li className="rounded-md bg-[#F1F3F5] p-3">
                 <p className="text-xs text-zinc-500">AI understanding</p>
                 <p className="mt-1 font-medium">{title(signal.category)} · {title(signal.sub_category ?? signal.category)}</p>
               </li>
-              <li className="rounded-md bg-[#F6F4EF] p-3">
+              <li className="rounded-md bg-[#F1F3F5] p-3">
                 <p className="text-xs text-zinc-500">Civic signal</p>
                 <p className="mt-1 font-medium">{title(signal.severity)} priority · {[signal.district, signal.state].filter(Boolean).join(", ")} · #{signal.id}</p>
               </li>
@@ -546,9 +546,9 @@ export default function CitizenPage() {
             return (
               <li key={t}>
                 <button onClick={() => setActiveStage(activeStage === i ? null : i)}
-                  className={`w-full rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] ${isActive ? "border-[#D99A18] bg-[#F6F4EF]" : "border-[#E7E3DB] bg-white"}`}
+                  className={`w-full rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] ${isActive ? "border-[#F5A800] bg-[#F1F3F5]" : "border-[#E5E7EB] bg-white"}`}
                   aria-pressed={isActive}>
-                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isActive ? "bg-[#D99A18] text-white" : "bg-zinc-100 text-zinc-600"}`}>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isActive ? "bg-[#F5A800] text-white" : "bg-zinc-100 text-zinc-600"}`}>
                     {String(n).padStart(2, "0")}
                   </span>
                   <span className="mt-2 block text-sm font-semibold">{t}</span>
@@ -561,7 +561,7 @@ export default function CitizenPage() {
       </section>
 
       {/* TRANSPARENCY */}
-      <section className="mx-auto mt-8 max-w-[1280px] rounded-xl border border-[#E7E3DB] bg-white p-6">
+      <section className="mx-auto mt-8 max-w-[1280px] rounded-xl border border-[#E5E7EB] bg-white p-6">
         <h2 className="text-sm font-semibold tracking-widest text-zinc-500">HOW JANSETU USES AI</h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-600">
           Gemini helps understand and structure citizen language. Deterministic backend

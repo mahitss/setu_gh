@@ -12,9 +12,9 @@ export function PageHeader({ eyebrow, title, sub }: { eyebrow: string; title: st
 
 export function MetricCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-[#E7E3DB] bg-white p-6">
+    <div className="rounded-xl border border-[#E5E7EB] bg-white p-6">
       <p className="flex items-center gap-1.5 text-[13px] font-semibold tracking-widest text-zinc-500">
-        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
+        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#F5A800]" />
         {label.toUpperCase()}
       </p>
       <p className="mt-1 text-[36px] font-semibold tabular-nums leading-none">{value}</p>

@@ -275,7 +275,7 @@ export default function DashboardPage() {
         infrastructure context and investment data are combined to surface emerging development needs.
       </p>
       <p className="mt-[14px] inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-medium text-zinc-600">
-        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
+        <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#F5A800]" />
         DEMONSTRATION DATASET
       </p>
 
@@ -291,9 +291,9 @@ export default function DashboardPage() {
               ["Active hotspots", fmtInt(summary.active_hotspots), "locations with detected demand"],
               ["High priority areas", fmtInt(summary.high_priority_areas), "requiring immediate attention"],
             ].map(([label, value, desc]) => (
-              <div key={label} className="h-[140px] rounded-xl border border-[#E7E3DB] bg-white p-7">
+              <div key={label} className="h-[140px] rounded-xl border border-[#E5E7EB] bg-white p-7">
                 <p className="flex items-center gap-1.5 text-[13px] font-semibold tracking-widest text-zinc-500">
-                  <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#D99A18]" />
+                  <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#F5A800]" />
                   {label.toUpperCase()}
                 </p>
                 <p className="mt-1 text-[36px] font-semibold tabular-nums leading-none">{value}</p>
@@ -316,10 +316,10 @@ export default function DashboardPage() {
         <h2 className="text-xl font-semibold tracking-wide">National demand map</h2>
         <p className="mt-1 text-sm text-zinc-500">Where citizen demand is concentrating across the demonstration dataset.</p>
         <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-5 lg:grid-cols-[minmax(0,2.1fr)_minmax(320px,0.9fr)]">
-          <div className="rounded-[14px] border border-[#E7E3DB] bg-[#F8F6F1] p-4 md:col-span-3 lg:col-span-1">
+          <div className="rounded-[14px] border border-[#E5E7EB] bg-[#F8F6F1] p-4 md:col-span-3 lg:col-span-1">
             <div className="flex items-center justify-between text-[11px] font-semibold tracking-widest text-zinc-500">
               <span className="flex items-center gap-1.5">
-                <span aria-hidden="true" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" />
+                <span aria-hidden="true" className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#F5A800]" />
                 LIVE CIVIC SIGNALS
               </span>
               <span>90 DAY WINDOW</span>
@@ -329,9 +329,9 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="md:col-span-2 lg:col-span-1">
-            <div className="rounded-xl border border-[#E7E3DB] bg-white p-4">
+            <div className="rounded-xl border border-[#E5E7EB] bg-white p-4">
               <h3 className="text-sm font-semibold tracking-wide text-zinc-500">CIVICPULSE</h3>
-              <p className="text-xs text-zinc-500">Rising civic demand <span aria-hidden="true" className="ml-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#D99A18]" /> <span className="font-semibold text-zinc-600">LIVE</span></p>
+              <p className="text-xs text-zinc-500">Rising civic demand <span aria-hidden="true" className="ml-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-[#F5A800]" /> <span className="font-semibold text-zinc-600">LIVE</span></p>
               {loading ? (
                 <div className="mt-2 space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
               ) : railRising.length === 0 ? (
@@ -487,7 +487,7 @@ export default function DashboardPage() {
             <Link key={e.id} href={`/hotspots/${encodeURIComponent(e.id)}`}
               className="rounded-md border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <p className="flex items-center gap-2 font-semibold">
-                <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-[#D99A18]" />
+                <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full bg-[#F5A800]" />
                 {e.district} <span className="font-normal text-zinc-500">· {e.state}</span>
               </p>
               <p className="text-sm text-zinc-600">{title(e.category)}</p>

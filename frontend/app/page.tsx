@@ -68,6 +68,14 @@ function HeroMap({ hotspots }: { hotspots: Hotspot[] }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <line key={`h${i}`} x1="0" y1={(i + 1) * 10} x2="100" y2={(i + 1) * 10} stroke="#3f3f46" strokeWidth="0.15" />
       ))}
+      {(() => {
+        const top = pts.slice(0, 6);
+        return top.slice(1).map((p, i) => (
+          <line key={`c${p.id}`} x1={X(top[i].longitude!)} y1={Y(top[i].latitude!) * 0.62}
+            x2={X(p.longitude!)} y2={Y(p.latitude!) * 0.62}
+            stroke="#635BFF" strokeWidth="0.3" opacity="0.5" />
+        ));
+      })()}
       {pts.map((p, i) => (
         <circle key={p.id} cx={X(p.longitude!)} cy={Y(p.latitude!) * 0.62} r={1 + (p.signals / max) * 2.4}
           fill="#fbbf24" className="signal-dot" style={{ animationDelay: `${(i % 7) * 0.4}s` }}>
@@ -216,7 +224,7 @@ export default function Home() {
       {loading && !summary && (
         <div className="mx-auto max-w-[1280px] px-6 md:px-10 pt-6">
           <p className="text-sm text-zinc-500" role="status">
-            <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#D99A18]" aria-hidden="true" />
+            <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#F5A800]" aria-hidden="true" />
             {loadMsg}
           </p>
         </div>
@@ -254,7 +262,7 @@ export default function Home() {
           {PIPELINE.map(([s, d], i) => (
             <li key={s} className="group flex items-center">
               <span className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold transition-colors duration-200 group-hover:bg-[#D99A18] group-hover:text-white">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold transition-colors duration-200 group-hover:bg-[#F5A800] group-hover:text-white">
                   {i + 1}
                 </span>
                 <span>
@@ -270,7 +278,7 @@ export default function Home() {
       </section>
 
       {/* INTELLIGENCE PREVIEW */}
-      <section className="border-y bg-[#F6F4EF]">
+      <section className="border-y bg-[#F1F3F5]">
         <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
           <div>
             <h2 className="text-2xl font-semibold">National civic intelligence</h2>
@@ -371,7 +379,7 @@ export default function Home() {
 
       {/* SIMULATOR */}
       {sim && top && (
-        <section className="border-y bg-[#F6F4EF]">
+        <section className="border-y bg-[#F1F3F5]">
           <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
             <h2 className="text-2xl font-semibold">What if we invest?</h2>
             <p className="mt-1 text-sm text-zinc-600">

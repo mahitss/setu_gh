@@ -21,6 +21,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aiLive, setAiLive] = useState<boolean | null>(null);
+  const [compact, setCompact] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/v1/health`)
@@ -29,9 +30,16 @@ export default function Navbar() {
       .catch(() => setAiLive(null));
   }, []);
 
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
-    <header className="border-b">
-      <div className="mx-auto flex h-[72px] w-full max-w-[1280px] items-center gap-x-6 px-5 md:px-8 min-[1440px]:px-10">
+    <header className={`sticky top-0 z-40 border-b bg-[#F7F8FA]/90 backdrop-blur transition-shadow duration-200 ${compact ? "shadow-[0_8px_30px_rgba(0,0,0,0.06)]" : ""}`}>
+      <div className={`mx-auto flex w-full max-w-[1280px] items-center gap-x-6 px-5 transition-all duration-200 md:px-8 min-[1440px]:px-10 ${compact ? "h-[60px]" : "h-[72px]"}`}>
         <Link href="/" className="leading-tight" aria-label="JanSetu home">
           <span className="block text-base font-bold tracking-widest">JANSETU</span>
           <span className="block text-[11px] text-zinc-500">AI Civic Intelligence for India</span>
@@ -40,7 +48,7 @@ export default function Navbar() {
           {LINKS.map(([label, href]) => (
             <Link key={href + label} href={href}
               aria-current={path === href ? "page" : undefined}
-              className={`relative py-1 transition-colors duration-150 hover:text-black after:absolute after:bottom-0 after:left-0 after:h-px after:bg-current after:transition-all after:duration-200 ${path === href ? "font-semibold text-black after:w-full" : "text-zinc-600 after:w-0 hover:after:w-full"}`}>
+              className={`relative py-1 transition-colors duration-150 hover:text-black after:absolute after:bottom-0 after:left-0 after:h-0.5 after:transition-all after:duration-200 ${path === href ? "font-semibold text-black after:w-full after:bg-[#F5A800]" : "text-zinc-600 after:w-0 after:bg-current hover:after:w-full"}`}>
               {label}
             </Link>
           ))}
@@ -48,7 +56,7 @@ export default function Navbar() {
         <div className="ml-auto hidden items-center gap-3 md:flex">
           <span className="rounded border px-2 py-0.5 text-[11px] text-zinc-500">Demo Mode</span>
           <span className="flex items-center gap-1.5 text-[11px] text-zinc-500" title={aiLive == null ? "Backend unreachable" : aiLive ? "Live Gemini configured" : "Demo fallback active"}>
-            <span aria-hidden="true" className={`inline-block h-1.5 w-1.5 rounded-full ${aiLive == null ? "bg-zinc-300" : aiLive ? "bg-green-600" : "bg-[#D99A18]"}`} />
+            <span aria-hidden="true" className={`inline-block h-1.5 w-1.5 rounded-full ${aiLive == null ? "bg-zinc-300" : aiLive ? "bg-green-600" : "bg-[#F5A800]"}`} />
             {aiLive == null ? "AI unknown" : aiLive ? "AI live" : "AI fallback"}
           </span>
           {user ? (
@@ -61,12 +69,12 @@ export default function Navbar() {
                 <span className="text-sm text-zinc-600">Hi, {user.name || "there"}</span>
               </button>
               {menuOpen && (
-                <div role="menu" className="absolute right-0 z-50 mt-2 w-56 rounded-md border border-[#E7E3DB] bg-white p-4 text-sm shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
+                <div role="menu" className="absolute right-0 z-50 mt-2 w-56 rounded-md border border-[#E5E7EB] bg-white p-4 text-sm shadow-[0_8px_30px_rgba(0,0,0,0.08)]">
                   <p className="font-semibold">{user.name || "Demo user"}</p>
                   <p className="mt-0.5 break-all text-xs text-zinc-500">{user.email}</p>
                   <p className="mt-0.5 text-xs text-zinc-500">Role: {user.role === "policymaker" ? "Policymaker / Analyst" : "Citizen"}</p>
                   <button onClick={() => { signout(); setMenuOpen(false); }}
-                    className="mt-3 w-full rounded-md border border-[#E7E3DB] px-3 py-2 hover:bg-zinc-50">
+                    className="mt-3 w-full rounded-md border border-[#E5E7EB] px-3 py-2 hover:bg-zinc-50">
                     Sign out
                   </button>
                 </div>
