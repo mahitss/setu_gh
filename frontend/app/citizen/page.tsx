@@ -22,6 +22,22 @@ const LANGUAGE_NAMES: Record<string, string> = {
   kn: "Kannada",
 };
 
+const ANALYSIS_STAGES = [
+  "Understanding language",
+  "Identifying civic category",
+  "Detecting severity",
+  "Connecting location",
+  "Structuring civic signal",
+];
+
+const PIPELINE_STAGES: [string, string][] = [
+  ["Your voice", "People describe what their community needs, in their own language."],
+  ["Gemini", "Language and intent become structured data — category, severity, summary."],
+  ["Civic signal", "A validated, located record of one community concern."],
+  ["Civic intelligence", "Signals join infrastructure, demographic and investment context."],
+  ["Development insight", "Evidence and scenarios inform real planning decisions."],
+];
+
 type Signal = {
   id: number;
   category: string;
@@ -60,6 +76,7 @@ function friendlyError(e: unknown, fallback: string): string {
 
 export default function CitizenPage() {
   const [text, setText] = useState("");
+  const [submittedText, setSubmittedText] = useState("");
   const [placeholder, setPlaceholder] = useState(`Example: ${EXAMPLES[1]}`);
   const [mode, setMode] = useState<"text" | "voice">("text");
   const [lang, setLang] = useState("auto");
@@ -67,7 +84,10 @@ export default function CitizenPage() {
   const [state, setState] = useState("Uttar Pradesh");
   const [district, setDistrict] = useState("Lucknow");
   const [locality, setLocality] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [stageIdx, setStageIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [signal, setSignal] = useState<Signal | null>(null);
   const [submittedAt, setSubmittedAt] = useState<string | null>(null);
@@ -76,6 +96,7 @@ export default function CitizenPage() {
   const [recSec, setRecSec] = useState(0);
   const [transcript, setTranscript] = useState("");
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [activeStage, setActiveStage] = useState<number | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -84,7 +105,7 @@ export default function CitizenPage() {
     let i = 0;
     const t = setInterval(() => {
       i = (i + 1) % EXAMPLES.length;
-      setPlaceholder(EXAMPLES[i]);
+      setPlaceholder(`Example: ${EXAMPLES[i]}`);
     }, 4000);
     return () => clearInterval(t);
   }, []);
@@ -98,6 +119,13 @@ export default function CitizenPage() {
 
   useEffect(() => stopTimer, []);
 
+  // Animated analysis progress, tied to the single real request in flight.
+  useEffect(() => {
+    if (!loading) return;
+    const t = setInterval(() => setStageIdx((i) => Math.min(i + 1, ANALYSIS_STAGES.length - 1)), 1200);
+    return () => clearInterval(t);
+  }, [loading]);
+
   async function analyzeText(value: string) {
     const input = value.trim();
     setError(null);
@@ -108,13 +136,23 @@ export default function CitizenPage() {
       return;
     }
     setLoading(true);
+    setStageIdx(0);
+    setSubmittedText(input);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 25000);
     try {
       const res = await fetch(`${API_URL}/api/v1/citizen/signals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input, language: lang, state, district, locality: locality.trim() || null }),
+        body: JSON.stringify({
+          text: input,
+          language: lang,
+          state,
+          district,
+          locality: locality.trim() || null,
+          latitude: coords?.lat ?? null,
+          longitude: coords?.lon ?? null,
+        }),
         signal: ctrl.signal,
       });
       if (!res.ok) {
@@ -131,7 +169,6 @@ export default function CitizenPage() {
       const data = await res.json();
       setSignal(data.signal);
       setSubmittedAt(new Date().toLocaleString());
-      // Link to the matching hotspot if one exists — id comes from the API, never invented.
       fetch(
         `${API_URL}/api/v1/hotspots?state=${encodeURIComponent(state)}&district=${encodeURIComponent(district)}&category=${encodeURIComponent(data.signal.category)}&limit=1`,
         { signal: ctrl.signal }
@@ -147,6 +184,20 @@ export default function CitizenPage() {
       clearTimeout(timer);
       setLoading(false);
     }
+  }
+
+  function resetAll() {
+    setSignal(null);
+    setText("");
+    setTranscript("");
+    setSubmittedText("");
+    setPhase("ready");
+    setExploreId(null);
+    setSubmittedAt(null);
+    setError(null);
+    setVoiceError(null);
+    setActiveStage(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function startRecording() {
@@ -196,45 +247,62 @@ export default function CitizenPage() {
     }
   }
 
+  function useMyLocation() {
+    setGeoMsg(null);
+    if (!navigator.geolocation) {
+      setGeoMsg("Geolocation is not available in this browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        setGeoMsg("Location attached — state and district selection still apply.");
+      },
+      () => setGeoMsg("Could not read your location. Please select state and district."),
+      { timeout: 10000 }
+    );
+  }
+
+  const autoStage = !signal ? 0 : 4;
+
   return (
     <main className="mx-auto max-w-7xl px-6 md:px-10 py-10">
       {/* HERO */}
-      <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
-        <Link href="/" className="underline hover:text-black">Home</Link>
-        <span> → Citizen Voice</span>
-      </nav>
-      <p className="mt-2 text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
-      <h1 className="mt-1 font-serif text-3xl font-semibold tracking-tight">Tell JanSetu what your community needs.</h1>
-      <p className="mt-2 max-w-2xl text-zinc-600">You can write it or simply speak. JanSetu will help structure your concern.</p>
+      <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU · CITIZEN VOICE</p>
+      <h1 className="mt-1 max-w-3xl font-serif text-4xl font-semibold tracking-tight">
+        Tell us what&apos;s happening in your community.
+      </h1>
       <p className="mt-2 max-w-2xl text-zinc-600">
-        Share a local problem in your own words. JanSetu turns your voice into a
-        structured civic signal that can be connected to development data.
+        Speak naturally. Write in your own language. JanSetu uses AI to turn your
+        experience into a structured civic signal that can be connected to development data.
       </p>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
-        {/* FORM */}
-        <div className="lg:col-span-3" id="citizen-form">
-          <div role="tablist" aria-label="Input mode" className="inline-flex rounded-md border p-1 text-sm">
+      {/* WORKSPACE */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* LEFT — INPUT */}
+        <section aria-labelledby="input-heading" className="rounded-xl border border-[#E7E3DB] bg-white p-6">
+          <h2 id="input-heading" className="text-sm font-semibold tracking-widest text-zinc-500">YOUR COMMUNITY SIGNAL</h2>
+          <div role="tablist" aria-label="Input mode" className="mt-3 inline-flex rounded-md border border-[#E7E3DB] p-1 text-sm">
             {(["text", "voice"] as const).map((m) => (
               <button
                 key={m}
                 role="tab"
                 aria-selected={mode === m}
                 onClick={() => setMode(m)}
-                className={`rounded px-4 py-2 font-medium ${mode === m ? "bg-black text-white" : "text-zinc-600 hover:bg-zinc-50"}`}
+                className={`rounded px-4 py-2 font-medium transition-colors duration-150 ${mode === m ? "bg-black text-white" : "text-zinc-600 hover:bg-zinc-50"}`}
               >
-                {m === "text" ? "Describe a problem" : "🎙️ Speak instead"}
+                {m === "text" ? "Write" : "Speak"}
               </button>
             ))}
           </div>
 
           {mode === "text" ? (
-            <section aria-labelledby="text-heading" className="mt-4">
-              <h2 id="text-heading" className="text-lg font-semibold">Step 1 — Tell us what&apos;s happening</h2>
-              <div className="mt-3 flex items-center gap-2 text-sm">
+            <div className="mt-4">
+              <div className="flex items-center gap-2 text-sm">
                 <label htmlFor="lang">Language</label>
-                <select id="lang" className="rounded-md border p-1.5" value={lang} onChange={(e) => setLang(e.target.value)} disabled={loading}>
-                  <option value="auto">Auto-detect</option>
+                <select id="lang" className="rounded-md border border-[#E7E3DB] p-1.5" value={lang}
+                  onChange={(e) => setLang(e.target.value)} disabled={loading}>
+                  <option value="auto">Auto detect</option>
                   <option value="hi">Hindi</option>
                   <option value="en">English</option>
                   <option value="bn">Bengali</option>
@@ -242,25 +310,52 @@ export default function CitizenPage() {
                   <option value="kn">Kannada</option>
                 </select>
               </div>
-              <label className="mt-3 block text-sm font-medium" htmlFor="issue">Your concern</label>
+              <label className="mt-3 block text-sm font-medium" htmlFor="issue">Describe what your community is experiencing…</label>
               <textarea
                 id="issue"
-                className="mt-2 min-h-40 w-full rounded-md border p-3 text-base"
+                className="mt-2 min-h-40 w-full rounded-md border border-[#E7E3DB] p-3 text-base focus:border-black focus:outline-none"
                 rows={7}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder={placeholder}
                 disabled={loading}
               />
-            </section>
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span className="text-xs text-zinc-500">{text.length} / 5000</span>
+                <span className="flex items-center gap-2">
+                  <button onClick={() => setMode("voice")} className="rounded-md border border-[#E7E3DB] px-3 py-2 text-sm hover:bg-zinc-50" title="Switch to voice input">🎙 Voice</button>
+                  <select aria-label="Language" className="rounded-md border border-[#E7E3DB] p-2 text-sm" value={lang}
+                    onChange={(e) => setLang(e.target.value)} disabled={loading}>
+                    <option value="auto">Auto</option>
+                    <option value="hi">HI</option>
+                    <option value="en">EN</option>
+                    <option value="bn">BN</option>
+                    <option value="mr">MR</option>
+                    <option value="kn">KN</option>
+                  </select>
+                  <Button onClick={() => analyzeText(text)} disabled={loading}>
+                    {loading ? "Analyzing…" : "Analyze with AI →"}
+                  </Button>
+                </span>
+              </div>
+            </div>
           ) : (
-            <section aria-labelledby="voice-heading" className="rounded-md border border-[#E7E3DB] bg-[#F6F4EF] p-5">
-              <h2 id="voice-heading" className="text-lg font-semibold">Speak your concern</h2>
-              <p className="mt-1 text-sm text-zinc-600">Speak naturally. Hindi, English and other supported languages are welcome.</p>
-              <h2 id="voice-heading" className="text-lg font-semibold">Speak your concern</h2>
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <label className="text-sm" htmlFor="voice-lang">Voice language</label>
-                <select id="voice-lang" className="rounded-md border p-1.5 text-sm" value={voiceLang}
+            <div className="mt-4 rounded-md border border-[#E7E3DB] bg-[#F6F4EF] p-6 text-center">
+              <div aria-hidden="true" className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${phase === "recording" ? "bg-red-700" : "bg-black"}`}>
+                <span className={`text-xl text-white ${phase === "recording" ? "animate-pulse" : ""}`}>●</span>
+              </div>
+              <p className="mt-3 font-medium" role="status" aria-live="polite">
+                {phase === "recording" ? `Listening to your voice… ${fmtTime(recSec)}` : PHASE_LABEL[phase]}
+              </p>
+              <div className="mt-2 flex items-center justify-center gap-2" aria-hidden="true">
+                {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+                  <span key={i} className={`inline-block w-1 rounded bg-zinc-400 ${phase === "recording" ? "signal-dot" : "opacity-40"}`}
+                    style={{ height: `${8 + ((i * 5) % 14)}px`, animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm">
+                <label htmlFor="voice-lang">Voice language</label>
+                <select id="voice-lang" className="rounded-md border border-[#E7E3DB] bg-white p-1.5" value={voiceLang}
                   onChange={(e) => setVoiceLang(e.target.value)} disabled={phase === "recording" || phase === "processing"}>
                   <option value="hi-IN">Hindi</option>
                   <option value="en-IN">English (India)</option>
@@ -269,137 +364,208 @@ export default function CitizenPage() {
                   <option value="kn-IN">Kannada</option>
                 </select>
               </div>
-              <p className="mt-3 text-sm font-medium" role="status" aria-live="polite">
-                Status: {PHASE_LABEL[phase]}
-                {phase === "recording" && ` — recording ${fmtTime(recSec)}`}
-                {phase === "processing" && " — transcribing"}
-              </p>
-              <div className="mt-3">
+              <div className="mt-4">
                 {phase === "recording" ? (
                   <Button variant="destructive" onClick={stopRecording} className="min-h-11 px-6">
-                    ⏹ Stop ({fmtTime(recSec)})
+                    Stop recording ({fmtTime(recSec)})
                   </Button>
                 ) : (
                   <Button variant="outline" onClick={startRecording} disabled={phase === "processing"} className="min-h-11 px-6">
-                    🎙️ {phase === "complete" ? "Record again" : "Start recording"}
+                    {phase === "complete" ? "Record again" : "Start recording"}
                   </Button>
                 )}
               </div>
-              {voiceError && <p role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{voiceError}</p>}
+              {voiceError && <p role="alert" className="mx-auto mt-3 max-w-md rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{voiceError}</p>}
               {phase === "complete" && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium">Your transcript</p>
-                  <label className="mt-1 block text-xs text-zinc-500" htmlFor="transcript">Editable — correct it if needed</label>
-                  <textarea id="transcript" className="mt-2 w-full rounded-md border p-3 text-base" rows={4}
+                <div className="mt-4 text-left">
+                  <label className="block text-sm font-medium" htmlFor="transcript">Your transcript (editable)</label>
+                  <textarea id="transcript" className="mt-2 w-full rounded-md border border-[#E7E3DB] bg-white p-3 text-base" rows={4}
                     value={transcript} onChange={(e) => setTranscript(e.target.value)} disabled={loading} />
+                  <Button className="mt-3" onClick={() => analyzeText(transcript)} disabled={loading}>
+                    {loading ? "Analyzing…" : "Analyze concern →"}
+                  </Button>
                 </div>
               )}
-            </section>
+            </div>
           )}
 
           {/* LOCATION */}
-          <section aria-labelledby="loc-heading" className="mt-6">
-            <h2 id="loc-heading" className="text-lg font-semibold">Step 2 — Where is this happening?</h2>
-            <p className="mt-1 text-sm text-zinc-600">Location helps JanSetu connect your concern with local development context.</p>
-            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-6 border-t border-[#E7E3DB] pt-4">
+            <h3 className="text-sm font-semibold tracking-wide">WHERE IS THIS HAPPENING?</h3>
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium" htmlFor="state">State</label>
-                <select id="state" className="mt-2 w-full rounded-md border p-2" value={state} disabled={loading}
+                <select id="state" className="mt-1 h-[52px] w-full rounded-md border border-[#d8d8d8] bg-white px-4 text-[15px]" value={state} disabled={loading}
                   onChange={(e) => { setState(e.target.value); setDistrict(STATE_DISTRICTS[e.target.value][0]); }}>
                   {Object.keys(STATE_DISTRICTS).map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium" htmlFor="district">District</label>
-                <select id="district" className="mt-2 w-full rounded-md border p-2" value={district} disabled={loading}
+                <select id="district" className="mt-1 h-[52px] w-full rounded-md border border-[#d8d8d8] bg-white px-4 text-[15px]" value={district} disabled={loading}
                   onChange={(e) => setDistrict(e.target.value)}>
                   {STATE_DISTRICTS[state].map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
             </div>
-            <label className="mt-4 block text-sm font-medium" htmlFor="locality">
+            <label className="mt-3 block text-sm font-medium" htmlFor="locality">
               Locality <span className="font-normal text-zinc-500">(optional)</span>
             </label>
-            <input id="locality" className="mt-2 w-full rounded-md border p-2" value={locality}
+            <input id="locality" className="mt-1 w-full rounded-md border border-[#d8d8d8] p-3" value={locality}
               onChange={(e) => setLocality(e.target.value)} placeholder="Village / ward" disabled={loading} />
-          </section>
-
-          {/* CTA */}
-          <div className="mt-6">
-            {mode === "text" ? (
-              <Button className="min-h-11 px-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]" onClick={() => analyzeText(text)} disabled={loading}>
-                {loading ? "Analyzing…" : "Analyze my concern →"}
-              </Button>
-            ) : (
-              <Button className="min-h-11 px-6" onClick={() => analyzeText(transcript)} disabled={loading || phase !== "complete"}>
-                {loading ? "Analyzing…" : "Analyze transcript →"}
-              </Button>
-            )}
-            <p className="mt-2 text-xs text-zinc-500">Only the information needed to understand and locate the civic concern is processed.</p>
+            <div className="mt-2 flex items-center gap-2 text-sm">
+              <button onClick={useMyLocation} className="rounded-md border border-[#E7E3DB] px-3 py-1.5 hover:bg-zinc-50">
+                Use my location
+              </button>
+              {coords && <span className="text-xs text-zinc-500">📍 {coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}</span>}
+            </div>
+            {geoMsg && <p className="mt-1 text-xs text-zinc-500">{geoMsg}</p>}
           </div>
 
           {error && (
-            <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
+            <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>
           )}
-        </div>
+        </section>
 
-        {/* INFO PANEL */}
-        <aside className="lg:col-span-2" aria-label="How JanSetu works">
-          <div className="rounded-md border p-5 lg:sticky lg:top-6">
-            <h2 className="text-lg font-semibold">How JanSetu works</h2>
-            <ol className="mt-3 space-y-3 text-sm">
-              {[
-                ["1", "Tell us what is happening."],
-                ["2", "AI structures the concern."],
-                ["3", "JanSetu connects it with civic data."],
-                ["4", "Evidence can inform development decisions."],
-              ].map(([n, t]) => (
-                <li key={n} className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-semibold">{n}</span>
-                  <span className="text-zinc-700">{t}</span>
-                </li>
-              ))}
-            </ol>
-            <h3 className="mt-5 text-sm font-semibold">Supported input</h3>
-            <p className="text-sm text-zinc-600">Text · Voice</p>
-            <h3 className="mt-4 text-sm font-semibold">Languages</h3>
-            <p className="text-sm text-zinc-600">Hindi · English · Bengali · Marathi · Kannada</p>
-          </div>
+        {/* RIGHT — AI PANEL */}
+        <aside aria-label="JanSetu AI interpretation" className="rounded-xl border border-[#E7E3DB] bg-white p-6 lg:sticky lg:top-6 lg:self-start">
+          <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU AI</p>
+          {loading ? (
+            <>
+              <p className="mt-1 font-medium" role="status" aria-live="polite">
+                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#D99A18]" />
+                Analyzing your concern
+              </p>
+              <ul className="mt-3 space-y-2 text-sm">
+                {ANALYSIS_STAGES.map((s, i) => (
+                  <li key={s} className={`flex items-center gap-2 ${i <= stageIdx ? "text-black" : "text-zinc-400"}`}>
+                    <span aria-hidden="true" className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${i < stageIdx ? "bg-green-700 text-white" : i === stageIdx ? "animate-pulse bg-[#D99A18] text-white" : "bg-zinc-100 text-zinc-400"}`}>
+                      {i < stageIdx ? "✓" : i + 1}
+                    </span>
+                    {s}{i === stageIdx && " ●"}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : signal ? (
+            <>
+              <p className="mt-1 font-medium">
+                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full bg-green-700" />
+                Understood
+              </p>
+              <dl className="mt-3 space-y-2 text-sm">
+                <div className="flex justify-between gap-2"><dt className="text-zinc-500">Category</dt><dd className="font-semibold">{title(signal.category)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-zinc-500">Severity</dt><dd className="font-semibold">{title(signal.severity)}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-zinc-500">Location</dt><dd className="font-semibold">{[signal.district, signal.state].filter(Boolean).join(", ") || "—"}</dd></div>
+                <div className="flex justify-between gap-2"><dt className="text-zinc-500">AI confidence</dt><dd className="font-semibold">{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
+              </dl>
+            </>
+          ) : (
+            <>
+              <p className="mt-1 font-medium">
+                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full bg-green-700" />
+                Ready
+              </p>
+              <p className="mt-2 text-sm text-zinc-600">
+                Once you submit your concern, JanSetu will identify the civic category,
+                severity, location and structured summary.
+              </p>
+            </>
+          )}
         </aside>
       </div>
 
       {/* RESULT */}
       {signal && (
-        <section aria-labelledby="result-heading" className="mx-auto mt-8 max-w-3xl rounded-md border p-5">
-          <p className="text-sm font-semibold tracking-widest text-zinc-500">JANSETU UNDERSTANDS</p>
-          <h2 id="result-heading" className="mt-1 text-xl font-semibold">Your concern has been heard. ✓</h2>
-          <p className="mt-1 text-sm text-zinc-600">JanSetu converted your message into a structured civic signal.</p>
-          <dl className="mt-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Category</dt><dd>{title(signal.category)}</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Severity</dt><dd>{title(signal.severity)} priority</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Language</dt><dd>{LANGUAGE_NAMES[signal.language] ?? signal.language}</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Location</dt><dd>{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Signal ID</dt><dd>#{signal.id}</dd></div>
-            <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Confidence</dt><dd>{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
-            {submittedAt && <div className="flex gap-2"><dt className="w-24 shrink-0 font-medium">Submitted</dt><dd>{submittedAt}</dd></div>}
-          </dl>
-          <p className="mt-3 text-sm"><span className="font-medium">Issue:</span> {signal.summary ?? title(signal.sub_category ?? signal.category)}</p>
-          <p className="mt-3 text-xs text-zinc-500">
-            AI helps structure your concern. Civic metrics are calculated by JanSetu&apos;s deterministic data engine.{" "}
-            {signal.extractor === "gemini" ? "Live AI extraction via Google Gemini." : "Demo fallback — structured without a live AI call."}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <Link href="/dashboard" className="rounded-md bg-black px-4 py-2 text-sm text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
-              View how this contributes to civic intelligence →
-            </Link>
-            {exploreId && (
-              <Link href={`/hotspots/${encodeURIComponent(exploreId)}`} className="rounded-md border px-4 py-2 text-sm">
-                Explore this area →
+        <section aria-labelledby="result-heading" className="mx-auto mt-8 max-w-3xl">
+          <div className="rounded-xl border border-[#E7E3DB] bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU UNDERSTANDING</p>
+            <h2 id="result-heading" className="mt-1 text-xl font-semibold">Your concern has been heard. ✓</h2>
+            <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">CATEGORY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.category)}</dd></div>
+              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">SEVERITY</dt><dd className="mt-1 text-lg font-semibold">{title(signal.severity)} priority</dd></div>
+              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">LOCATION</dt><dd className="mt-1 text-lg font-semibold">{[signal.district, signal.state].filter(Boolean).join(", ")}</dd></div>
+              <div className="rounded-md bg-[#F6F4EF] p-3"><dt className="text-xs text-zinc-500">AI CONFIDENCE</dt><dd className="mt-1 text-lg font-semibold">{signal.ai_confidence != null ? `${Math.round(signal.ai_confidence * 100)}%` : "—"}</dd></div>
+            </dl>
+            <p className="mt-3 text-sm"><span className="font-medium">Language:</span> {LANGUAGE_NAMES[signal.language] ?? signal.language} · <span className="font-medium">Signal ID:</span> #{signal.id}{submittedAt ? <> · <span className="font-medium">Submitted:</span> {submittedAt}</> : null}</p>
+            <p className="mt-2 text-sm text-zinc-600">“{signal.summary ?? submittedText.slice(0, 160)}”</p>
+            <p className="mt-2 text-xs text-zinc-500">
+              AI helps structure your concern. Civic metrics are calculated by JanSetu&apos;s deterministic data engine.{" "}
+              {signal.extractor === "gemini" ? "Live AI extraction via Google Gemini." : "Demo fallback — structured without a live AI call."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/dashboard" className="rounded-md bg-black px-4 py-2 text-sm text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)]">
+                View how this contributes to civic intelligence →
               </Link>
-            )}
+              {exploreId && (
+                <Link href={`/hotspots/${encodeURIComponent(exploreId)}`} className="rounded-md border border-[#E7E3DB] px-4 py-2 text-sm hover:bg-zinc-50">
+                  Explore this area →
+                </Link>
+              )}
+              <button onClick={resetAll} className="rounded-md border border-[#E7E3DB] px-4 py-2 text-sm hover:bg-zinc-50">
+                Submit another signal
+              </button>
+            </div>
+          </div>
+
+          {/* SIGNAL VIZ */}
+          <div className="mt-4 rounded-xl border border-[#E7E3DB] bg-white p-6">
+            <p className="text-xs font-semibold tracking-widest text-zinc-500">YOUR VOICE → CIVIC SIGNAL</p>
+            <ol className="mt-3 space-y-2 text-sm">
+              <li className="rounded-md bg-[#F6F4EF] p-3">
+                <p className="text-xs text-zinc-500">Citizen words</p>
+                <p className="mt-1">“{submittedText.slice(0, 120)}{submittedText.length > 120 ? "…" : ""}”</p>
+              </li>
+              <li className="rounded-md bg-[#F6F4EF] p-3">
+                <p className="text-xs text-zinc-500">AI understanding</p>
+                <p className="mt-1 font-medium">{title(signal.category)} · {title(signal.sub_category ?? signal.category)}</p>
+              </li>
+              <li className="rounded-md bg-[#F6F4EF] p-3">
+                <p className="text-xs text-zinc-500">Civic signal</p>
+                <p className="mt-1 font-medium">{title(signal.severity)} priority · {[signal.district, signal.state].filter(Boolean).join(", ")} · #{signal.id}</p>
+              </li>
+            </ol>
+            <p className="mt-3 text-sm font-medium">Ready for civic intelligence →</p>
+            <Link href="/dashboard" className="mt-2 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
+              Continue →
+            </Link>
           </div>
         </section>
       )}
+
+      {/* PIPELINE */}
+      <section className="mx-auto mt-10 max-w-7xl">
+        <h2 className="font-serif text-2xl font-semibold">How JanSetu understands you</h2>
+        <ol className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          {PIPELINE_STAGES.map(([t, d], i) => {
+            const n = i + 1;
+            const isActive = (activeStage ?? autoStage) === i;
+            return (
+              <li key={t}>
+                <button onClick={() => setActiveStage(activeStage === i ? null : i)}
+                  className={`w-full rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] ${isActive ? "border-[#D99A18] bg-[#F6F4EF]" : "border-[#E7E3DB] bg-white"}`}
+                  aria-pressed={isActive}>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${isActive ? "bg-[#D99A18] text-white" : "bg-zinc-100 text-zinc-600"}`}>
+                    {String(n).padStart(2, "0")}
+                  </span>
+                  <span className="mt-2 block text-sm font-semibold">{t}</span>
+                  <span className={`mt-1 block text-xs text-zinc-500 ${isActive ? "" : "hidden group-hover:block"}`}>{d}</span>
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      {/* TRANSPARENCY */}
+      <section className="mx-auto mt-8 max-w-7xl rounded-xl border border-[#E7E3DB] bg-white p-6">
+        <h2 className="text-sm font-semibold tracking-widest text-zinc-500">HOW JANSETU USES AI</h2>
+        <p className="mt-2 max-w-3xl text-sm text-zinc-600">
+          Gemini helps understand and structure citizen language. Deterministic backend
+          systems calculate civic metrics. Your submission becomes a structured signal.
+          Numerical priorities are NOT generated by the language model.
+        </p>
+      </section>
     </main>
   );
 }
