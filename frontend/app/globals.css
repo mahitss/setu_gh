@@ -49,13 +49,13 @@
 }
 
 :root {
-  --background: #F7F8FA;
-  --foreground: #15171A;
+  --background: #F5F6F8;
+  --foreground: #101318;
   --card: #FFFFFF;
-  --card-foreground: #15171A;
+  --card-foreground: #101318;
   --popover: #FFFFFF;
-  --popover-foreground: #15171A;
-  --primary: #111318;
+  --popover-foreground: #101318;
+  --primary: #0A0C10;
   --primary-foreground: #FFFFFF;
   --secondary: #FFFFFF;
   --secondary-foreground: #111318;
@@ -63,9 +63,9 @@
   --muted-foreground: #667085;
   --accent: #F6F4EF;
   --accent-foreground: #111318;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #E5E7EB;
-  --input: #E5E7EB;
+  --destructive: #DC2626;
+  --border: #E4E7EC;
+  --input: #E4E7EC;
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -73,6 +73,13 @@
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
+  --content-width: 1280px;
+  /* JanSetu accent system — sparing, intentional use only */
+  --js-amber: #F5A800;
+  --js-amber-bright: #FFB81C;
+  --js-indigo: #635BFF;
+  --js-blue: #3B82F6;
+  --js-success: #16A34A;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);

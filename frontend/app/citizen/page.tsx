@@ -429,17 +429,20 @@ export default function CitizenPage() {
 
         {/* RIGHT — AI PANEL */}
         <aside aria-label="JanSetu AI interpretation" className="rounded-xl border border-[#E7E3DB] bg-white p-6 lg:sticky lg:top-6 lg:self-start">
-          <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU AI</p>
+          <p className="flex items-center gap-2 text-xs font-semibold tracking-widest text-zinc-500">
+            <span aria-hidden="true" className="inline-block h-1.5 w-1.5 rounded-full bg-[#635BFF]" />
+            JANSETU AI
+          </p>
           {loading ? (
             <>
               <p className="mt-1 font-medium" role="status" aria-live="polite">
-                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#D99A18]" />
+                <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#635BFF]" />
                 Analyzing your concern
               </p>
               <ul className="mt-3 space-y-2 text-sm">
                 {ANALYSIS_STAGES.map((s, i) => (
                   <li key={s} className={`flex items-center gap-2 ${i <= stageIdx ? "text-black" : "text-zinc-400"}`}>
-                    <span aria-hidden="true" className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${i < stageIdx ? "bg-green-700 text-white" : i === stageIdx ? "animate-pulse bg-[#D99A18] text-white" : "bg-zinc-100 text-zinc-400"}`}>
+                    <span aria-hidden="true" className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold ${i < stageIdx ? "bg-green-700 text-white" : i === stageIdx ? "animate-pulse bg-[#635BFF] text-white" : "bg-zinc-100 text-zinc-400"}`}>
                       {i < stageIdx ? "✓" : i + 1}
                     </span>
                     {s}{i === stageIdx && " ●"}

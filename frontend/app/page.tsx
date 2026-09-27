@@ -149,8 +149,12 @@ export default function Home() {
   return (
     <main className="flex-1">
       {/* HERO */}
-      <section className="bg-zinc-950 text-white">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 px-6 py-16 md:px-10 lg:grid-cols-2 lg:min-h-[580px]">
+      <section className="relative overflow-hidden bg-[#0A0C10] text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-[#F5A800] opacity-[0.07] blur-3xl" />
+          <div className="absolute right-0 top-1/3 h-[28rem] w-[28rem] rounded-full bg-[#635BFF] opacity-[0.10] blur-3xl" />
+        </div>
+        <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 px-5 py-16 md:px-8 min-[1440px]:px-10 lg:grid-cols-2 lg:min-h-[580px]">
           <div className="animate-[fade-up_.5s_ease-out]">
             <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
             <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -169,8 +173,25 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="rounded-md border border-zinc-800 bg-zinc-900 p-4">
+          <div className="relative rounded-xl border border-white/10 bg-[#11141A] p-4">
+            <div className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_70%_20%,rgba(99,91,255,0.12),transparent_60%)]" aria-hidden="true" />
             <HeroMap hotspots={hotspots} />
+            {summary && !loading && (
+              <>
+                <span className="absolute left-6 top-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
+                  {fmtInt(summary.citizen_signals)} signals
+                </span>
+                <span className="absolute right-6 top-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
+                  {hotspots.length} active hotspots
+                </span>
+                <span className="absolute bottom-6 left-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
+                  {rising.length} rising categories
+                </span>
+                <span className="absolute bottom-6 right-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
+                  90-day intelligence
+                </span>
+              </>
+            )}
             {!loading && hotspots.length === 0 && (
               <p className="mt-2 text-xs text-zinc-400">Civic intelligence will appear when the data service is connected.</p>
             )}

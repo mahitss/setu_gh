@@ -279,36 +279,39 @@ function Simulator() {
 
       {result && (
         <>
-          <section className="mt-8 rounded-md border border-zinc-300 p-6" aria-label="Scenario outcome">
-            <p className="text-xs font-semibold tracking-widest text-zinc-500">SCENARIO OUTCOME</p>
-            <p className="mt-2 text-4xl font-semibold tabular-nums">₹{result.scenario.budget_cr} Cr</p>
-            <p className="mt-1 text-lg">{title(result.scenario.intervention)}</p>
-            <p className="text-sm text-zinc-500">Prototype estimate</p>
-            <p key={result.estimate.population_reached} className="mt-4 text-5xl font-semibold tabular-nums animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
-            <p className="text-sm text-zinc-500">people potentially reached</p>
+          <section className="relative mt-8 overflow-hidden rounded-xl bg-[#0A0C10] p-6 text-white sm:p-8" aria-label="Scenario outcome">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+              <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#635BFF] opacity-[0.12] blur-3xl" />
+            </div>
+            <p className="relative text-xs font-semibold tracking-widest text-zinc-400">SCENARIO OUTCOME</p>
+            <p className="relative mt-2 text-4xl font-semibold tabular-nums">₹{result.scenario.budget_cr} Cr</p>
+            <p className="relative mt-1 text-lg text-zinc-300">{title(result.scenario.intervention)}</p>
+            <p className="relative text-sm text-zinc-400">Prototype estimate</p>
+            <p key={result.estimate.population_reached} className="relative mt-4 text-5xl font-semibold tabular-nums animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
+            <p className="relative text-sm text-zinc-400">people potentially reached</p>
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Population affected</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Population affected</dt>
                 <dd className="mt-1 text-xl font-semibold">{fmtInt(result.baseline.population_affected)}</dd>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Current infrastructure gap</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Current infrastructure gap</dt>
                 <dd className="mt-1 text-xl font-semibold">{(result.baseline.gap_index * 100).toFixed(0)}%</dd>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Estimated reach</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Estimated reach</dt>
                 <dd className="mt-1 text-xl font-semibold">{fmtInt(result.estimate.population_reached)}</dd>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Projected gap</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Projected gap</dt>
                 <dd className="mt-1 text-xl font-semibold">−{(result.estimate.gap_reduction * 100).toFixed(1)}%</dd>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Coverage improvement</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Coverage improvement</dt>
                 <dd className="mt-1 text-xl font-semibold">+{(result.estimate.coverage_improvement * 100).toFixed(1)}%</dd>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <dt className="text-xs text-zinc-500">Locations affected</dt>
+              <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
+                <dt className="text-xs text-zinc-400">Locations affected</dt>
                 <dd className="mt-1 text-xl font-semibold">{result.estimate.locations_affected}</dd>
               </div>
             </dl>
