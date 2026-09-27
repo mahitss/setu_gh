@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/components/RequireAuth";
+import { Breadcrumb, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { apiGet, fmtInt, hotspotHref, title, trendLabel } from "@/lib/api";
 import type { Hotspot } from "@/lib/api";
 
@@ -72,16 +73,24 @@ function HotspotsPage() {
     refetch(f);
   }
 
+  function clearFilters() {
+    setFState("");
+    setFDistrict("");
+    setFCategory("");
+    setFPriority("");
+    refetch({ state: "", district: "", category: "", priority: "" });
+  }
+
   return (
-    <main className="mx-auto max-w-7xl px-6 md:px-10 py-10">
-      <nav aria-label="Breadcrumb" className="text-sm text-zinc-500">
-        <Link href="/" className="underline hover:text-black">Home</Link>
-        <span> → Hotspot intelligence</span>
-      </nav>
-      <h1 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Hotspot intelligence</h1>
-      <p className="mt-1 text-sm text-zinc-500">
-        {loading ? "Loading…" : `${fmtInt(total)} hotspots · deterministic ranking`} · Synthetic demonstration dataset.
-      </p>
+    <main className="mx-auto w-full max-w-[1480px] px-5 md:px-8 min-[1440px]:px-10 py-8">
+      <Breadcrumb trail={[["Home", "/"], ["Hotspot intelligence"]]} />
+      <div className="mt-2">
+        <PageHeader
+          eyebrow="JANSETU · HOTSPOT INTELLIGENCE"
+          title="Hotspot intelligence"
+          sub={loading ? "Loading…" : `${fmtInt(total)} hotspots · deterministic ranking · Synthetic demonstration dataset.`}
+        />
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-3 text-sm">
         <label>State{" "}
@@ -112,11 +121,20 @@ function HotspotsPage() {
 
       {error && <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
       {loading ? (
-        <p className="mt-4 text-sm text-zinc-500">Loading hotspots…</p>
+        <div className="mt-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
       ) : hotspots.length === 0 ? (
-        <p className="mt-4 rounded-md border p-4 text-sm text-zinc-600">No hotspots match these filters.</p>
+        <div className="mt-4">
+          <EmptyState
+            title="No hotspots match these filters"
+            body="Try removing a filter — for example, widen the state or lower the priority threshold."
+            actionLabel="Clear filters"
+            onAction={clearFilters}
+          />
+        </div>
       ) : (
-        <div className="mt-4 overflow-x-auto rounded-md border">
+        <>
+        <p className="mt-4 text-sm text-zinc-500">Showing {fmtInt(Math.min(20, hotspots.length))} of {fmtInt(total)} matching hotspots.</p>
+        <div className="mt-2 overflow-x-auto rounded-md border">
           <table className="w-full text-left text-sm">
             <thead className="bg-zinc-50">
               <tr>
@@ -142,6 +160,7 @@ function HotspotsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </main>
   );
