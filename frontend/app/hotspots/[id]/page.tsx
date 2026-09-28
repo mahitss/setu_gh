@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import HotspotDetailView from "@/components/HotspotDetailView";
+import { Skeleton } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import type { CompareOut, HotspotDetail, RecommendationOut } from "@/lib/api";
 
@@ -13,6 +14,7 @@ export default function HotspotByIdPage() {
   const [rec, setRec] = useState<RecommendationOut | null>(null);
   const [compare, setCompare] = useState<CompareOut | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -48,20 +50,32 @@ export default function HotspotByIdPage() {
         setError("Could not load this hotspot. It may not exist or the server is unreachable.");
       });
     return () => ctrl.abort();
-  }, [params]);
+  }, [params, reloadKey]);
 
   if (error) {
     return (
       <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12">
         <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-red-800">{error}</p>
-        <Link href="/dashboard" className="mt-4 inline-block underline">Back to dashboard</Link>
+        <div className="mt-4 flex gap-3">
+          <button onClick={() => { setError(null); setReloadKey((k) => k + 1); }}
+            className="rounded-md border px-4 py-2 text-sm hover:bg-zinc-50">
+            Retry
+          </button>
+          <Link href="/dashboard" className="underline self-center text-sm">Back to dashboard</Link>
+        </div>
       </main>
     );
   }
   if (!detail) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12">
-        <p className="text-zinc-600">Loading hotspot…</p>
+      <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12" aria-label="Loading hotspot">
+        <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU INTELLIGENCE</p>
+        <div className="mt-3 space-y-2" role="status" aria-live="polite">
+          <Skeleton className="h-10 w-2/3" />
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
       </main>
     );
   }

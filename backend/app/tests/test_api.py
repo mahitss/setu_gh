@@ -457,6 +457,38 @@ def test_policy_query_no_results():
     assert r.status_code == 200 and r.json()["count"] == 0 and r.json()["matches"] == []
 
 
+# --- Demo data contract: one Hindi healthcare signal, same district everywhere ---
+
+def test_golden_demo_contract():
+    r = client.post("/api/v1/citizen/signals", json={
+        "text": HINDI_HEALTH, "language": "auto",
+        "state": "Uttar Pradesh", "district": "Lucknow", "locality": "Demo Village"})
+    sig = r.json()["signal"]
+    assert (sig["category"], sig["severity"], sig["language"]) == ("healthcare", "high", "hi")
+    assert (sig["state"], sig["district"]) == ("Uttar Pradesh", "Lucknow")
+    # same district/category visible as a hotspot with evidence + recommendation
+    h = client.get("/api/v1/hotspots", params={
+        "state": "Uttar Pradesh", "district": "Lucknow", "category": "healthcare"}).json()["hotspots"]
+    assert len(h) == 1 and h[0]["district"] == "Lucknow"
+    d = client.get(f"/api/v1/hotspots/{h[0]['id']}").json()
+    assert d["location"] == {"state": "Uttar Pradesh", "district": "Lucknow"}
+    assert d["evidence"]["signals"] >= 1
+    rec = client.get(f"/api/v1/hotspots/{h[0]['id']}/recommendation").json()
+    assert rec["evidence"]["citizen_signals"] == d["evidence"]["signals"]
+    # same category present in CivicPulse; simulator accepts the pair
+    cats = [p["category"] for p in client.get("/api/v1/civic-pulse").json()["pulse"]]
+    assert "healthcare" in cats
+    s = client.post("/api/v1/simulate", json={
+        "state": "Uttar Pradesh", "district": "Lucknow",
+        "category": "healthcare", "budget": 1000000000}).json()
+    assert s["scenario"]["district"] == "Lucknow" and s["estimate"]["population_reached"] > 0
+    # cleanup: demo probe must not pollute the seed
+    db = TestingSession()
+    db.query(models.CitizenSignal).filter_by(id=sig["id"]).delete()
+    db.commit()
+    db.close()
+
+
 # --- Phase 9: recommendation engine ---
 
 def test_recommendation_engine_deterministic():
