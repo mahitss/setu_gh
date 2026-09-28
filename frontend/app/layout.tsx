@@ -56,6 +56,7 @@ function SiteFooter() {
             <p className="text-xs font-semibold tracking-wide text-zinc-500">Technology</p>
             <ul className="mt-2 space-y-1 text-zinc-600">
               <li>Google Gemini</li>
+              <li>Google Cloud</li>
               <li>Deterministic backend engines</li>
             </ul>
           </div>

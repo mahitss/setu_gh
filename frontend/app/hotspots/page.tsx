@@ -21,6 +21,7 @@ function HotspotsPage() {
   const [fPriority, setFPriority] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   async function load(signal: AbortSignal, filters: Record<string, string>) {
@@ -31,6 +32,7 @@ function HotspotsPage() {
     const h = await apiGet<{ hotspots: Hotspot[]; count: number }>(`/api/v1/hotspots?${q}`, signal);
     setHotspots(h.hotspots);
     setTotal(h.count);
+    setFailed(false);
   }
 
   function refetch(filters: Record<string, string>) {
@@ -41,6 +43,7 @@ function HotspotsPage() {
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setError("Cannot reach the server. Start the backend and refresh.");
+        setFailed(true);
       })
       .finally(() => setLoading(false));
   }
@@ -58,6 +61,7 @@ function HotspotsPage() {
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
         setError("Cannot reach the server. Start the backend and refresh.");
+        setFailed(true);
       })
       .finally(() => setLoading(false));
     return () => ctrl.abort();
@@ -90,7 +94,7 @@ function HotspotsPage() {
         <PageHeader
           eyebrow="JANSETU · HOTSPOT INTELLIGENCE"
           title="Hotspot intelligence"
-          sub={loading ? "Loading…" : `${fmtInt(total)} hotspots · deterministic ranking · Synthetic demonstration dataset.`}
+          sub={loading ? "Loading…" : failed ? "Hotspot data unavailable · Synthetic demonstration dataset." : `${fmtInt(total)} hotspots · deterministic ranking · Synthetic demonstration dataset.`}
         />
       </div>
 
@@ -134,12 +138,21 @@ function HotspotsPage() {
         <div className="mt-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
       ) : hotspots.length === 0 ? (
         <div className="mt-4">
-          <EmptyState
-            title="No hotspots match these filters"
-            body="Try removing a filter — for example, widen the state or lower the priority threshold."
-            actionLabel="Clear filters"
-            onAction={clearFilters}
-          />
+          {failed ? (
+            <EmptyState
+              title="Hotspot data is temporarily unavailable"
+              body="The backend could not be reached, so no hotspot data is shown. Your filters are unchanged."
+              actionLabel="Retry connection"
+              onAction={() => refetch({ state: fState, district: fDistrict, category: fCategory, priority: fPriority })}
+            />
+          ) : (
+            <EmptyState
+              title="No hotspots match these filters"
+              body="Try removing a filter — for example, widen the state or lower the priority threshold."
+              actionLabel="Clear filters"
+              onAction={clearFilters}
+            />
+          )}
         </div>
       ) : (
         <>

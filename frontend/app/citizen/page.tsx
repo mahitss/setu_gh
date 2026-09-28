@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MapPin, Mic } from "lucide-react";
 import { STATE_DISTRICTS, title } from "@/lib/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -323,7 +324,7 @@ export default function CitizenPage() {
               <div className="mt-2 flex items-center justify-between text-sm">
                 <span className="text-xs text-zinc-500">{text.length} / 5000</span>
                 <span className="flex items-center gap-2">
-                  <button onClick={() => setMode("voice")} className="rounded-md border border-[#E5E7EB] px-3 py-2 text-sm hover:bg-zinc-50" title="Switch to voice input">🎙 Voice</button>
+                  <button onClick={() => setMode("voice")} className="flex items-center gap-1.5 rounded-md border border-[#E5E7EB] px-3 py-2 text-sm hover:bg-zinc-50" title="Switch to voice input"><Mic size={16} aria-hidden="true" /> Voice</button>
                   <select aria-label="Language" className="rounded-md border border-[#E5E7EB] p-2 text-sm" value={lang}
                     onChange={(e) => setLang(e.target.value)} disabled={loading}>
                     <option value="auto">Auto</option>
@@ -417,7 +418,7 @@ export default function CitizenPage() {
               <button onClick={useMyLocation} className="rounded-md border border-[#E5E7EB] px-3 py-1.5 hover:bg-zinc-50">
                 Use my location
               </button>
-              {coords && <span className="text-xs text-zinc-500">📍 {coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}</span>}
+              {coords && <span className="flex items-center gap-1 text-xs text-zinc-500"><MapPin size={14} aria-hidden="true" /> {coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}</span>}
             </div>
             {geoMsg && <p className="mt-1 text-xs text-zinc-500">{geoMsg}</p>}
           </div>
