@@ -205,6 +205,26 @@
   }
 }
 
+@keyframes js-orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.9;
+  }
+}
+
+.js-orb-spin {
+  animation: js-spin-slow 26s linear infinite;
+}
+
+.js-orb-breathe {
+  animation: js-orb-breathe 4.5s ease-in-out infinite;
+}
+
 .js-flow-line {
   stroke-dasharray: 5 9;
   animation: js-dash-flow 1.4s linear infinite;
