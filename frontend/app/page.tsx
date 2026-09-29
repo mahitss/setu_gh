@@ -224,37 +224,37 @@ function Pipeline() {
     <div>
       {/* Desktop: horizontal architecture rail */}
       <ol className="relative hidden lg:block">
-        <div className="absolute left-0 right-0 top-[26px] h-px bg-zinc-200" aria-hidden="true" />
+        <div className="absolute left-0 right-0 top-[26px] h-px bg-zinc-200 dark:bg-white/10" aria-hidden="true" />
         <div className="js-pipeline-progress absolute left-0 right-0 top-[26px] h-px bg-gradient-to-r from-[#F5B400] via-[#F5B400] to-[#7C7CFF]" aria-hidden="true" />
         <div className="grid grid-cols-7 gap-4">
           {STAGES.map((s, i) => (
             <li key={s.name} className="group relative pt-0">
-              <span className="relative z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-zinc-200 bg-white transition-all duration-300 group-hover:border-[#F5B400] group-hover:shadow-[0_10px_30px_rgba(245,180,0,0.25)]" aria-hidden="true">
-                <s.icon className="h-5 w-5 text-zinc-700 transition-colors duration-300 group-hover:text-[#B87E00]" strokeWidth={1.8} />
+              <span className="relative z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-zinc-200 bg-white transition-all duration-300 group-hover:border-[#F5B400] group-hover:shadow-[0_10px_30px_rgba(245,180,0,0.25)] dark:border-white/10 dark:bg-[#101318]" aria-hidden="true">
+                <s.icon className="h-5 w-5 text-zinc-700 transition-colors duration-300 group-hover:text-[#B87E00] dark:text-zinc-300 dark:group-hover:text-[#F5B400]" strokeWidth={1.8} />
                 <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0B] font-mono text-[10px] font-semibold text-white">
                   {String(i + 1).padStart(2, "0")}
                 </span>
               </span>
-              <p className="mt-4 text-[11px] font-semibold tracking-[0.16em] text-zinc-400">0{i + 1}</p>
-              <p className="mt-1 text-[15px] font-semibold text-zinc-900">{s.name}</p>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500">{s.text}</p>
+              <p className="mt-4 text-[11px] font-semibold tracking-[0.16em] text-zinc-400 dark:text-zinc-500">0{i + 1}</p>
+              <p className="mt-1 text-[15px] font-semibold text-zinc-900 dark:text-white">{s.name}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500 dark:text-zinc-400">{s.text}</p>
             </li>
           ))}
         </div>
       </ol>
       {/* Mobile / tablet: vertical timeline */}
-      <ol className="relative space-y-7 border-l border-zinc-200 pl-0 lg:hidden">
+      <ol className="relative space-y-7 border-l border-zinc-200 pl-0 dark:border-white/10 lg:hidden">
         {STAGES.map((s, i) => (
           <li key={s.name} className="relative pl-14">
             <span className="absolute left-0 top-0 -translate-x-1/2" aria-hidden="true">
-              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white">
-                <s.icon className="h-5 w-5 text-zinc-700" strokeWidth={1.8} />
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white dark:border-white/10 dark:bg-[#101318]">
+                <s.icon className="h-5 w-5 text-zinc-700 dark:text-zinc-300" strokeWidth={1.8} />
               </span>
             </span>
             <span className="absolute bottom-[-28px] left-0 top-11 w-px -translate-x-1/2 bg-gradient-to-b from-[#F5B400]/60 to-transparent" aria-hidden={i === STAGES.length - 1} style={i === STAGES.length - 1 ? { display: "none" } : undefined} />
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-zinc-400">0{i + 1}</p>
-            <p className="mt-0.5 text-base font-semibold text-zinc-900">{s.name}</p>
-            <p className="mt-1 text-sm leading-relaxed text-zinc-500">{s.text}</p>
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-zinc-400 dark:text-zinc-500">0{i + 1}</p>
+            <p className="mt-0.5 text-base font-semibold text-zinc-900 dark:text-white">{s.name}</p>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{s.text}</p>
           </li>
         ))}
       </ol>
@@ -289,16 +289,16 @@ function IntelMap({ hotspots }: { hotspots: Hotspot[] }) {
   const hovered = pts.find((p) => p.id === hoverId) ?? null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_24px_70px_rgba(10,10,11,0.10)]">
-      <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-3">
-        <p className="text-[11px] font-semibold tracking-[0.22em] text-zinc-500">DEMAND GEOGRAPHY · 24 DISTRICTS</p>
-        <p className="hidden text-[11px] tracking-wide text-zinc-400 sm:block">Hover a node for detail</p>
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_24px_70px_rgba(10,10,11,0.10)] dark:border-white/10 dark:bg-[#101318] dark:shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
+      <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-3 dark:border-white/10">
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-zinc-500 dark:text-zinc-400">DEMAND GEOGRAPHY · 24 DISTRICTS</p>
+        <p className="hidden text-[11px] tracking-wide text-zinc-400 dark:text-zinc-500 sm:block">Hover a node for detail</p>
       </div>
       <div className="relative">
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Living intelligence map of civic demand across India">
           <defs>
             <pattern id="js-light-grid" width="26" height="26" patternUnits="userSpaceOnUse">
-              <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#101318" strokeOpacity="0.05" strokeWidth="1" />
+              <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#8a8f98" strokeOpacity="0.14" strokeWidth="1" />
             </pattern>
           </defs>
           <rect width={W} height={H} fill="url(#js-light-grid)" />
@@ -361,12 +361,12 @@ function IntelMap({ hotspots }: { hotspots: Hotspot[] }) {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-zinc-100 px-5 py-3 text-[11px] tracking-wide text-zinc-500">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-zinc-100 px-5 py-3 text-[11px] tracking-wide text-zinc-500 dark:border-white/10 dark:text-zinc-400">
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#DC2626]" /> Critical</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#F5B400]" /> High</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#7C7CFF]" /> Medium</span>
         <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#A1A1AA]" /> Low</span>
-        <Link href="/hotspots" className="ml-auto font-semibold text-zinc-800 hover:underline">All hotspots →</Link>
+        <Link href="/hotspots" className="ml-auto font-semibold text-zinc-800 hover:underline dark:text-zinc-200">All hotspots →</Link>
       </div>
     </div>
   );
@@ -385,26 +385,26 @@ function PulsePanel({ pulse }: { pulse: PulseItem[] }) {
     return <p className="text-sm text-zinc-500">No pulse data right now.</p>;
   }
   return (
-    <ol className="mt-6 divide-y divide-zinc-200 border-y border-zinc-200">
+    <ol className="mt-6 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-white/10 dark:border-white/10">
       {rows.map((p) => {
         const up = (p.trend_percent ?? 0) >= 0;
         const TrendIcon = up ? TrendingUp : p.trend_percent == null ? Minus : TrendingDown;
         return (
           <li key={p.category} className="group py-5 transition-colors duration-200 first:pt-6 last:pb-6 hover:bg-white/60">
             <div className="flex items-baseline justify-between gap-4">
-              <p className="text-[15px] font-semibold text-zinc-900">{title(p.category)}</p>
+              <p className="text-[15px] font-semibold text-zinc-900 dark:text-white">{title(p.category)}</p>
               <p className={`flex items-center gap-1.5 font-serif text-[2rem] font-semibold leading-none tracking-tight ${up ? "text-[#B42318]" : "text-emerald-700"}`}>
                 <TrendIcon className="h-5 w-5" strokeWidth={2.2} aria-hidden="true" />
                 {trendLabel(p.trend_percent)}
               </p>
             </div>
-            <p className="mt-1 text-[13px] text-zinc-500">
+            <p className="mt-1 text-[13px] text-zinc-500 dark:text-zinc-400">
               {fmtInt(p.current_count)} citizen signals · 30-day change · demand is {p.status.replace(/_/g, " ")}
             </p>
             <div className="mt-3 space-y-1.5" aria-hidden="true">
               <div className="flex items-center gap-2">
                 <span className="w-14 text-[11px] text-zinc-400">Prior</span>
-                <span className="h-1.5 rounded-full bg-zinc-300 transition-all duration-500" style={{ width: `${Math.max(4, (p.previous_count / maxCount) * 100)}%` }} />
+                <span className="h-1.5 rounded-full bg-zinc-300 transition-all duration-500 dark:bg-white/15" style={{ width: `${Math.max(4, (p.previous_count / maxCount) * 100)}%` }} />
                 <span className="text-[11px] text-zinc-400">{fmtInt(p.previous_count)}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -571,17 +571,17 @@ export default function Home() {
       </section>
 
       {/* ================= HOW JANSETU THINKS ================= */}
-      <section className="bg-white">
+      <section className="bg-white dark:bg-[#080A0D]">
         <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
           <Reveal>
-            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400 dark:text-zinc-500">
               <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
               SYSTEM ARCHITECTURE
             </p>
-            <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950">
+            <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950 dark:text-white">
               How JanSetu thinks
             </h2>
-            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500">
+            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500 dark:text-zinc-400">
               From lived experience to evidence-backed action.
             </p>
           </Reveal>
@@ -592,17 +592,17 @@ export default function Home() {
       </section>
 
       {/* ================= NATIONAL CIVIC INTELLIGENCE ================= */}
-      <section className="border-y border-[#EDE6D8] bg-[#FAF6EF]">
+      <section className="border-y border-[#EDE6D8] bg-[#FAF6EF] dark:border-white/10 dark:bg-[#080A0D]">
         <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
           <Reveal>
-            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400 dark:text-zinc-500">
               <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
               LIVE FROM THE BACKEND
             </p>
-            <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950">
+            <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950 dark:text-white">
               National civic intelligence
             </h2>
-            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500">
+            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500 dark:text-zinc-400">
               Where citizen demand is concentrating across India — right now.
             </p>
           </Reveal>
@@ -611,12 +611,12 @@ export default function Home() {
               <IntelMap hotspots={hotspots} />
             </Reveal>
             <Reveal delay={160}>
-              <p className="text-[11px] font-semibold tracking-[0.24em] text-zinc-400">CIVICPULSE · DEMAND MOMENTUM</p>
-              <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-zinc-950">What&apos;s changing?</h3>
+              <p className="text-[11px] font-semibold tracking-[0.24em] text-zinc-400 dark:text-zinc-500">CIVICPULSE · DEMAND MOMENTUM</p>
+              <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-zinc-950 dark:text-white">What&apos;s changing?</h3>
               <PulsePanel pulse={pulse} />
               <Link
                 href="/dashboard"
-                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-[#0A0A0B] px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(10,10,11,0.3)]"
+                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-[#0A0A0B] px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(10,10,11,0.3)] dark:bg-white dark:text-black"
               >
                 Open Intelligence Dashboard
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
@@ -628,26 +628,26 @@ export default function Home() {
 
       {/* ================= EVIDENCE → ACTION ================= */}
       {top && (
-        <section className="bg-white">
+        <section className="bg-white dark:bg-[#080A0D]">
           <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
               <Reveal>
                 <div className="lg:sticky lg:top-28">
-                  <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+                  <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400 dark:text-zinc-500">
                     <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
                     WHY IT MATTERS
                   </p>
-                  <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold uppercase leading-[1.05] tracking-tight text-zinc-950">
+                  <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold uppercase leading-[1.05] tracking-tight text-zinc-950 dark:text-white">
                     From signal to evidence to action.
                   </h2>
-                  <p className="mt-4 max-w-md text-[15px] leading-relaxed text-zinc-500">
-                    One live hotspot — <strong className="font-semibold text-zinc-800">{top.district}, {top.state}</strong> ·{" "}
+                  <p className="mt-4 max-w-md text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    One live hotspot — <strong className="font-semibold text-zinc-800 dark:text-zinc-200">{top.district}, {top.state}</strong> ·{" "}
                     {title(top.category)} — traced from raw citizen reports to a development
                     priority. Every figure below is computed by deterministic backend engines.
                   </p>
                   <Link
                     href={hotspotHref(top)}
-                    className="group mt-7 inline-flex items-center gap-2 rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-900"
+                    className="group mt-7 inline-flex items-center gap-2 rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-900 dark:border-white/20 dark:text-white dark:hover:border-white/60"
                   >
                     Open the hotspot file
                     <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
@@ -660,14 +660,14 @@ export default function Home() {
                     <li className="group relative flex gap-6 pb-8 last:pb-0">
                       <span className="flex flex-col items-center" aria-hidden="true">
                         <span className="flex h-3 w-3 rounded-full bg-[#F5B400] ring-4 ring-[#F5B400]/15 transition-all duration-300 group-hover:ring-[#F5B400]/30" />
-                        {i < trail.length && <span className="mt-1 w-px flex-1 bg-gradient-to-b from-[#F5B400]/70 via-zinc-200 to-zinc-200" />}
+                        {i < trail.length && <span className="mt-1 w-px flex-1 bg-gradient-to-b from-[#F5B400]/70 via-zinc-200 to-zinc-200 dark:via-white/15 dark:to-white/15" />}
                       </span>
-                      <div className="flex-1 border-b border-zinc-100 pb-8 group-last:border-0 group-last:pb-0">
-                        <p className="font-serif text-[clamp(2.2rem,3.5vw,3.2rem)] font-semibold leading-none tracking-tight text-zinc-950">
+                      <div className="flex-1 border-b border-zinc-100 pb-8 group-last:border-0 group-last:pb-0 dark:border-white/10">
+                        <p className="font-serif text-[clamp(2.2rem,3.5vw,3.2rem)] font-semibold leading-none tracking-tight text-zinc-950 dark:text-white">
                           {t.value}
                         </p>
-                        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">{t.label}</p>
-                        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-zinc-500">{t.note}</p>
+                        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">{t.label}</p>
+                        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{t.note}</p>
                       </div>
                     </li>
                   </Reveal>
@@ -677,7 +677,7 @@ export default function Home() {
                     <span className="flex flex-col items-center" aria-hidden="true">
                       <span className="flex h-3 w-3 rounded-full bg-[#0A0A0B] ring-4 ring-zinc-900/10" />
                     </span>
-                    <div className="flex-1 rounded-2xl bg-[#0A0A0B] p-7 text-white">
+                    <div className="flex-1 rounded-2xl bg-[#0A0A0B] p-7 text-white dark:border dark:border-white/10">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F5B400]">Outcome</p>
                       <p className="mt-2 font-serif text-3xl font-semibold tracking-tight">Development priority</p>
                       <p className="mt-2 text-sm leading-relaxed text-zinc-400">

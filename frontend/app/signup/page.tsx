@@ -29,7 +29,7 @@ function SignUpForm() {
   return (
     <main className="mx-auto w-full max-w-[1280px] px-5 md:px-8 min-[1440px]:px-10 py-10">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="hidden rounded-xl border border-[#E5E7EB] bg-zinc-950 p-8 text-white lg:block">
+        <div className="hidden rounded-xl border border-[var(--border)] bg-[#0B0C0F] p-8 text-white lg:block">
           <p className="text-sm font-bold tracking-widest">JANSETU</p>
           <p className="mt-4 font-serif text-3xl font-semibold leading-tight">Join the civic<br />intelligence network.</p>
           <p className="mt-3 max-w-sm text-sm text-zinc-300">
@@ -37,9 +37,9 @@ function SignUpForm() {
           </p>
         </div>
         <div className="rounded-md border p-6">
-        <p className="text-center text-sm font-semibold tracking-widest text-zinc-500">JANSETU</p>
+        <p className="text-center text-sm font-semibold tracking-widest text-[var(--js-muted)]">JANSETU</p>
         <h1 className="mt-2 text-center text-2xl font-semibold">Create your JanSetu account</h1>
-        <p className="mt-1 text-center text-xs text-zinc-500">
+        <p className="mt-1 text-center text-xs text-[var(--js-muted)]">
           Demonstration account only — stored in this browser, replaceable by Firebase/Auth later.
         </p>
         <label className="mt-5 block text-sm font-medium" htmlFor="su-name">Full name</label>
@@ -68,7 +68,7 @@ function SignUpForm() {
             </label>
           </div>
         </fieldset>
-        {error && <p role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-2 text-sm text-red-800">{error}</p>}
+        {error && <p role="alert" className="mt-3 rounded-md border border-[#C93636]/40 bg-[#C93636]/10 p-2 text-sm text-[#C93636] dark:text-[#F87171]">{error}</p>}
         <Button className="mt-5 w-full" onClick={submit}>Create account →</Button>
         <p className="mt-4 text-center text-sm">
           <Link href="/signin" className="underline">Already have an account? Sign in</Link>
@@ -81,7 +81,7 @@ function SignUpForm() {
 
 export default function SignUpPage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-md px-6 py-16"><p className="text-zinc-600">Loading…</p></main>}>
+    <Suspense fallback={<main className="mx-auto max-w-md px-6 py-16"><p className="text-[var(--js-muted)]">Loading…</p></main>}>
       <SignUpForm />
     </Suspense>
   );

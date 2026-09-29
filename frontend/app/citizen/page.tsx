@@ -145,13 +145,13 @@ function SignalOrb({ orb, recSec }: { orb: OrbState; recSec: number }) {
         ? "bg-[#138A52]"
         : orb === "thinking"
           ? "bg-[#F5B400]"
-          : "bg-[#0B0C0F]";
+          : "bg-[#0B0C0F] dark:bg-white";
   return (
     <div className="relative mx-auto flex aspect-square w-full max-w-[420px] items-center justify-center" role="status" aria-live="polite" aria-label={`${headline}. ${sub}`}>
       <div aria-hidden="true" className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_50%_45%,rgba(245,180,0,0.14),transparent_65%)]" />
-      <div aria-hidden="true" className="js-orb-breathe absolute inset-[6%] rounded-full border border-[#0B0C0F]/10" />
-      <div aria-hidden="true" className="absolute inset-[13%] rounded-full border border-dashed border-[#0B0C0F]/20 js-orb-spin" />
-      <div aria-hidden="true" className="absolute inset-[21%] rounded-full border border-[#0B0C0F]/10" />
+      <div aria-hidden="true" className="js-orb-breathe absolute inset-[6%] rounded-full border border-[#0B0C0F]/10 dark:border-white/15" />
+      <div aria-hidden="true" className="absolute inset-[13%] rounded-full border border-dashed border-[#0B0C0F]/20 dark:border-white/20 js-orb-spin" />
+      <div aria-hidden="true" className="absolute inset-[21%] rounded-full border border-[#0B0C0F]/10 dark:border-white/10" />
       {orb === "listening" && (
         <span aria-hidden="true" className="absolute inset-[27%] animate-ping rounded-full bg-[#C93636]/20" />
       )}
@@ -162,11 +162,11 @@ function SignalOrb({ orb, recSec }: { orb: OrbState; recSec: number }) {
           ) : orb === "listening" ? (
             <Mic className={`h-9 w-9 ${orb === "listening" ? "animate-pulse" : ""}`} aria-hidden="true" />
           ) : (
-            <Sparkles className="h-8 w-8" aria-hidden="true" />
+            <Sparkles className="h-8 w-8 dark:text-black" aria-hidden="true" />
           )}
         </span>
-        <p className="mt-5 text-[11px] font-bold tracking-[0.28em] text-zinc-500">{headline}</p>
-        <p className="mt-1.5 font-serif text-xl font-semibold text-[#0B0C0F]">
+        <p className="mt-5 text-[11px] font-bold tracking-[0.28em] text-zinc-500 dark:text-zinc-400">{headline}</p>
+        <p className="mt-1.5 font-serif text-xl font-semibold text-[#0B0C0F] dark:text-white">
           {orb === "listening" ? `${sub} ${fmtTime(recSec)}` : sub}
         </p>
         <p className="mt-3 text-[11px] uppercase tracking-[0.2em] text-zinc-400">Voice ↓ · Gemini ↓ · Civic signal</p>
@@ -389,7 +389,7 @@ export default function CitizenPage() {
   const detectedLang = signal ? (LANGUAGE_NAMES[signal.language] ?? signal.language) : null;
 
   return (
-    <main className="flex-1 bg-[#F6F7F8]">
+    <main className="flex-1 bg-[#F6F7F8] dark:bg-[#080A0D]">
       {/* ================= HERO ================= */}
       <section className="relative overflow-hidden">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -398,28 +398,28 @@ export default function CitizenPage() {
         </div>
         <div className="relative mx-auto grid max-w-[1360px] grid-cols-1 items-center gap-10 px-5 pb-14 pt-12 md:px-8 min-[1440px]:px-10 lg:grid-cols-[1.05fr_0.95fr] lg:pb-20 lg:pt-16">
           <div className="animate-[fade-up_.5s_ease-out]">
-            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-500">
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-500 dark:text-zinc-400">
               <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
               JANSETU · CITIZEN VOICE
             </p>
-            <h1 className="mt-5 font-serif text-[clamp(2.6rem,5.5vw,4.75rem)] font-semibold uppercase leading-[1.04] tracking-tight text-[#0B0C0F]">
-              Tell us what your <span className="text-[#B87E00]">community</span> is experiencing.
+            <h1 className="mt-5 font-serif text-[clamp(2.6rem,5.5vw,4.75rem)] font-semibold uppercase leading-[1.04] tracking-tight text-[#0B0C0F] dark:text-white">
+              Tell us what your <span className="text-[#B87E00] dark:text-[#F5B400]">community</span> is experiencing.
             </h1>
-            <p className="mt-5 max-w-xl text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-zinc-600">
+            <p className="mt-5 max-w-xl text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-zinc-600 dark:text-zinc-400">
               Speak naturally. Write in your own language. JanSetu turns your experience
               into a structured civic signal that can be connected to development intelligence.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button
                 onClick={() => pickMode("voice")}
-                className={`group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 ${mode === "voice" ? "bg-[#F5B400] text-black shadow-[0_12px_36px_rgba(245,180,0,0.4)]" : "bg-[#0B0C0F] text-white hover:shadow-[0_12px_32px_rgba(11,12,15,0.3)]"}`}
+                className={`group inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[15px] font-semibold transition-all duration-200 hover:-translate-y-0.5 ${mode === "voice" ? "bg-[#F5B400] text-black shadow-[0_12px_36px_rgba(245,180,0,0.4)]" : "bg-[#0B0C0F] text-white hover:shadow-[0_12px_32px_rgba(11,12,15,0.3)] dark:bg-white dark:text-black"}`}
               >
                 <Mic className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
                 Speak
               </button>
               <button
                 onClick={() => pickMode("text")}
-                className={`group inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-[15px] font-medium transition-all duration-200 hover:-translate-y-0.5 ${mode === "text" ? "border-[#0B0C0F] bg-white text-[#0B0C0F] shadow-[0_12px_32px_rgba(11,12,15,0.12)]" : "border-zinc-300 bg-white/60 text-zinc-700 hover:border-zinc-500"}`}
+                className={`group inline-flex items-center gap-2 rounded-full border px-7 py-3.5 text-[15px] font-medium transition-all duration-200 hover:-translate-y-0.5 ${mode === "text" ? "border-[#0B0C0F] bg-white text-[#0B0C0F] shadow-[0_12px_32px_rgba(11,12,15,0.12)] dark:border-white dark:bg-white/10 dark:text-white" : "border-zinc-300 bg-white/60 text-zinc-700 hover:border-zinc-500 dark:border-white/20 dark:bg-white/5 dark:text-zinc-300"}`}
               >
                 <PenLine className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
                 Write
@@ -436,17 +436,17 @@ export default function CitizenPage() {
       <div ref={workspaceRef} className="mx-auto max-w-[1360px] scroll-mt-24 px-5 md:px-8 min-[1440px]:px-10">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr]">
           {/* LEFT — INPUT */}
-          <section aria-labelledby="input-heading" className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_20px_60px_rgba(11,12,15,0.07)]">
-            <div className="border-b border-zinc-100 px-6 pb-5 pt-6 sm:px-8">
-              <h2 id="input-heading" className="text-[11px] font-bold tracking-[0.24em] text-zinc-500">YOUR COMMUNITY SIGNAL</h2>
-              <div role="tablist" aria-label="Input mode" className="mt-4 inline-flex rounded-full border border-zinc-200 bg-[#F6F7F8] p-1 text-sm">
+          <section aria-labelledby="input-heading" className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-[0_20px_60px_rgba(11,12,15,0.07)] dark:border-white/10 dark:bg-[#101318] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+            <div className="border-b border-zinc-100 px-6 pb-5 pt-6 dark:border-white/10 sm:px-8">
+              <h2 id="input-heading" className="text-[11px] font-bold tracking-[0.24em] text-zinc-500 dark:text-zinc-400">YOUR COMMUNITY SIGNAL</h2>
+              <div role="tablist" aria-label="Input mode" className="mt-4 inline-flex rounded-full border border-zinc-200 bg-[#F6F7F8] p-1 text-sm dark:border-white/10 dark:bg-white/5">
                 {(["text", "voice"] as const).map((m) => (
                   <button
                     key={m}
                     role="tab"
                     aria-selected={mode === m}
                     onClick={() => setMode(m)}
-                    className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 ${mode === m ? "bg-[#0B0C0F] text-white shadow" : "text-zinc-500 hover:text-zinc-900"}`}
+                    className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 ${mode === m ? "bg-[#0B0C0F] text-white shadow dark:bg-white dark:text-black" : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"}`}
                   >
                     {m === "text" ? "Write" : "Speak"}
                   </button>
@@ -458,19 +458,19 @@ export default function CitizenPage() {
               {mode === "text" ? (
                 <div>
                   <div className="flex flex-wrap items-center gap-3 text-sm">
-                    <label htmlFor="lang" className="text-[11px] font-bold tracking-[0.18em] text-zinc-500">LANGUAGE</label>
-                    <select id="lang" className="rounded-full border border-zinc-200 bg-[#F6F7F8] px-4 py-2 text-sm font-medium transition-colors focus:border-[#F5B400] focus:outline-none" value={lang}
+                    <label htmlFor="lang" className="text-[11px] font-bold tracking-[0.18em] text-zinc-500 dark:text-zinc-400">LANGUAGE</label>
+                    <select id="lang" className="rounded-full border border-zinc-200 bg-[#F6F7F8] px-4 py-2 text-sm font-medium transition-colors focus:border-[#F5B400] focus:outline-none dark:border-white/15 dark:bg-white/5 dark:text-white" value={lang}
                       onChange={(e) => setLang(e.target.value)} disabled={loading}>
                       {TEXT_LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                     </select>
                   </div>
-                  <label className="mt-5 block font-serif text-2xl font-semibold text-[#0B0C0F]" htmlFor="issue">
+                  <label className="mt-5 block font-serif text-2xl font-semibold text-[#0B0C0F] dark:text-white" htmlFor="issue">
                     What is happening in your community?
                   </label>
                   <textarea
                     id="issue"
                     ref={textareaRef}
-                    className="mt-3 min-h-44 w-full resize-y rounded-xl border-2 border-zinc-200 bg-[#FDFDFC] p-4 text-[17px] leading-relaxed transition-all duration-200 placeholder:text-zinc-400 hover:border-zinc-300 focus:border-[#F5B400] focus:outline-none focus:ring-4 focus:ring-[#F5B400]/15"
+                    className="mt-3 min-h-44 w-full resize-y rounded-xl border-2 border-zinc-200 bg-[#FDFDFC] p-4 text-[17px] leading-relaxed transition-all duration-200 placeholder:text-zinc-400 hover:border-zinc-300 focus:border-[#F5B400] focus:outline-none focus:ring-4 focus:ring-[#F5B400]/15 dark:border-white/15 dark:bg-white/5 dark:text-white dark:placeholder:text-zinc-500 dark:hover:border-white/25"
                     rows={7}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -480,10 +480,10 @@ export default function CitizenPage() {
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                     <span className="text-xs tabular-nums text-zinc-400">{text.length} / 5000</span>
                     <span className="flex flex-wrap items-center gap-2">
-                      <button onClick={() => setMode("voice")} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:border-zinc-400 hover:bg-zinc-50" title="Switch to voice input">
+                      <button onClick={() => setMode("voice")} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2.5 text-sm font-medium transition-colors duration-200 hover:border-zinc-400 hover:bg-zinc-50 dark:border-white/15 dark:hover:border-white/40 dark:hover:bg-white/5" title="Switch to voice input">
                         <Mic size={16} aria-hidden="true" /> Voice
                       </button>
-                      <select aria-label="Language" className="rounded-full border border-zinc-200 bg-[#F6F7F8] px-3 py-2.5 text-sm font-medium" value={lang}
+                      <select aria-label="Language" className="rounded-full border border-zinc-200 bg-[#F6F7F8] px-3 py-2.5 text-sm font-medium dark:border-white/15 dark:bg-white/5" value={lang}
                         onChange={(e) => setLang(e.target.value)} disabled={loading}>
                         <option value="auto">Auto</option>
                         <option value="hi">HI</option>
@@ -502,7 +502,7 @@ export default function CitizenPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-xl bg-[#0B0C0F] p-6 text-center text-white sm:p-8">
+                <div className="rounded-xl bg-[#0B0C0F] p-6 text-center text-white dark:border dark:border-white/10 dark:bg-[#0A0C10] sm:p-8">
                   <div aria-hidden="true" className={`relative mx-auto flex h-20 w-20 items-center justify-center rounded-full transition-colors duration-300 ${phase === "recording" ? "bg-[#C93636]" : "bg-white/10"}`}>
                     {phase === "recording" && <span className="absolute inset-0 animate-ping rounded-full bg-[#C93636]/40" />}
                     <Mic className={`h-8 w-8 ${phase === "recording" ? "animate-pulse" : ""}`} aria-hidden="true" />
@@ -549,46 +549,46 @@ export default function CitizenPage() {
               )}
 
               {/* LOCATION */}
-              <div className="mt-8 border-t border-zinc-100 pt-6">
+              <div className="mt-8 border-t border-zinc-100 pt-6 dark:border-white/10">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-[11px] font-bold tracking-[0.24em] text-zinc-500">WHERE IS THIS HAPPENING?</h3>
-                    <p className="mt-1.5 text-sm text-zinc-500">Location gives your signal civic context.</p>
+                    <h3 className="text-[11px] font-bold tracking-[0.24em] text-zinc-500 dark:text-zinc-400">WHERE IS THIS HAPPENING?</h3>
+                    <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">Location gives your signal civic context.</p>
                   </div>
-                  <div className="hidden items-center gap-2.5 rounded-xl bg-[#F6F7F8] px-3.5 py-2.5 sm:flex" aria-hidden="true">
-                    <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#0B0C0F]">
-                      <MapPin className="h-4 w-4 text-[#F5B400]" />
+                  <div className="hidden items-center gap-2.5 rounded-xl bg-[#F6F7F8] px-3.5 py-2.5 dark:bg-white/5 sm:flex" aria-hidden="true">
+                    <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#0B0C0F] dark:bg-[#F5B400]">
+                      <MapPin className="h-4 w-4 text-[#F5B400] dark:text-black" />
                       <span className="absolute inset-0 animate-ping rounded-full bg-[#F5B400]/20" />
                     </span>
                     <span className="text-left text-xs leading-tight">
-                      <span className="block font-semibold text-[#0B0C0F]">{district}</span>
-                      <span className="block text-zinc-500">{state}</span>
+                      <span className="block font-semibold text-[#0B0C0F] dark:text-white">{district}</span>
+                      <span className="block text-zinc-500 dark:text-zinc-400">{state}</span>
                     </span>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700" htmlFor="state">State</label>
-                    <select id="state" className="mt-1.5 h-[52px] w-full rounded-xl border border-zinc-200 bg-white px-4 text-[15px] transition-colors focus:border-[#F5B400] focus:outline-none" value={state} disabled={loading}
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="state">State</label>
+                    <select id="state" className="mt-1.5 h-[52px] w-full rounded-xl border border-zinc-200 bg-white px-4 text-[15px] transition-colors focus:border-[#F5B400] focus:outline-none dark:border-white/15 dark:bg-white/5" value={state} disabled={loading}
                       onChange={(e) => { setState(e.target.value); setDistrict(STATE_DISTRICTS[e.target.value][0]); }}>
                       {Object.keys(STATE_DISTRICTS).map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-zinc-700" htmlFor="district">District</label>
-                    <select id="district" className="mt-1.5 h-[52px] w-full rounded-xl border border-zinc-200 bg-white px-4 text-[15px] transition-colors focus:border-[#F5B400] focus:outline-none" value={district} disabled={loading}
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="district">District</label>
+                    <select id="district" className="mt-1.5 h-[52px] w-full rounded-xl border border-zinc-200 bg-white px-4 text-[15px] transition-colors focus:border-[#F5B400] focus:outline-none dark:border-white/15 dark:bg-white/5" value={district} disabled={loading}
                       onChange={(e) => setDistrict(e.target.value)}>
                       {STATE_DISTRICTS[state].map((d) => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
                 </div>
-                <label className="mt-3 block text-sm font-medium text-zinc-700" htmlFor="locality">
-                  Locality <span className="font-normal text-zinc-400">(optional)</span>
+                <label className="mt-3 block text-sm font-medium text-zinc-700 dark:text-zinc-300" htmlFor="locality">
+                  Locality <span className="font-normal text-zinc-400"> (optional)</span>
                 </label>
-                <input id="locality" className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white p-3.5 transition-colors placeholder:text-zinc-400 focus:border-[#F5B400] focus:outline-none" value={locality}
+                <input id="locality" className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white p-3.5 transition-colors placeholder:text-zinc-400 focus:border-[#F5B400] focus:outline-none dark:border-white/15 dark:bg-white/5 dark:placeholder:text-zinc-500" value={locality}
                   onChange={(e) => setLocality(e.target.value)} placeholder="Village / ward" disabled={loading} />
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-                  <button onClick={useMyLocation} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2 font-medium transition-colors duration-200 hover:border-[#0B0C0F] hover:bg-zinc-50">
+                  <button onClick={useMyLocation} className="flex items-center gap-1.5 rounded-full border border-zinc-200 px-4 py-2 font-medium transition-colors duration-200 hover:border-[#0B0C0F] hover:bg-zinc-50 dark:border-white/15 dark:hover:border-white/50 dark:hover:bg-white/5">
                     <MapPin size={15} aria-hidden="true" /> Use my location
                   </button>
                   {coords && <span className="text-xs tabular-nums text-zinc-500">{coords.lat.toFixed(3)}, {coords.lon.toFixed(3)}</span>}
@@ -739,7 +739,7 @@ export default function CitizenPage() {
       {/* ================= TRUST STRIP ================= */}
       <section className="mx-auto max-w-[1360px] px-5 py-16 md:px-8 min-[1440px]:px-10 lg:py-20">
         <Reveal>
-          <div className="rounded-2xl border border-zinc-200/80 bg-white px-6 py-8 shadow-[0_20px_60px_rgba(11,12,15,0.06)] sm:px-10">
+          <div className="rounded-2xl border border-zinc-200/80 bg-white px-6 py-8 shadow-[0_20px_60px_rgba(11,12,15,0.06)] dark:border-white/10 dark:bg-[#101318] dark:shadow-[0_20px_60px_rgba(0,0,0,0.5)] sm:px-10">
             <p className="flex items-center gap-2 text-[11px] font-bold tracking-[0.24em] text-zinc-500">
               <ShieldCheck className="h-4 w-4 text-[#138A52]" aria-hidden="true" />
               WHY YOU CAN TRUST THIS
@@ -748,45 +748,45 @@ export default function CitizenPage() {
               {["Your voice", "Structured signal", "Civic intelligence", "Development insight"].map((s, i, a) => (
                 <li key={s} className="flex flex-1 items-center gap-4 md:gap-0">
                   <div className="flex items-center gap-3.5">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0B0C0F] font-serif text-base font-semibold text-[#F5B400]" aria-hidden="true">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0B0C0F] font-serif text-base font-semibold text-[#F5B400] dark:bg-[#F5B400] dark:text-black" aria-hidden="true">
                       {i + 1}
                     </span>
-                    <span className="text-[15px] font-semibold text-[#0B0C0F]">{s}</span>
+                    <span className="text-[15px] font-semibold text-[#0B0C0F] dark:text-white">{s}</span>
                   </div>
                   {i < a.length - 1 && (
-                    <span aria-hidden="true" className="mx-2 hidden h-px flex-1 bg-gradient-to-r from-[#F5B400]/70 to-zinc-200 md:mx-5 md:block" />
+                    <span aria-hidden="true" className="mx-2 hidden h-px flex-1 bg-gradient-to-r from-[#F5B400]/70 to-zinc-200 dark:to-white/15 md:mx-5 md:block" />
                   )}
                 </li>
               ))}
             </ol>
-            <p className="mt-6 border-t border-zinc-100 pt-5 text-center text-sm leading-relaxed text-zinc-500">
+            <p className="mt-6 border-t border-zinc-100 pt-5 text-center text-sm leading-relaxed text-zinc-500 dark:border-white/10 dark:text-zinc-400">
               JanSetu uses Gemini to understand language. Deterministic systems calculate civic metrics and priorities.
               <br className="hidden sm:block" />
-              <strong className="font-semibold text-zinc-800">AI interprets language. The data engine calculates the numbers.</strong>
+              <strong className="font-semibold text-zinc-800 dark:text-zinc-200">AI interprets language. The data engine calculates the numbers.</strong>
             </p>
           </div>
         </Reveal>
       </section>
 
       {/* ================= LANGUAGES ================= */}
-      <section className="border-y border-[#EDE6D8] bg-[#F7F6F3]">
+      <section className="border-y border-[#EDE6D8] bg-[#F7F6F3] dark:border-white/10 dark:bg-[#080A0D]">
         <div className="mx-auto max-w-[1360px] px-5 py-16 text-center md:px-8 min-[1440px]:px-10 lg:py-20">
           <Reveal>
-            <p className="flex items-center justify-center gap-2 text-[11px] font-bold tracking-[0.24em] text-zinc-500">
-              <Languages className="h-4 w-4 text-[#B87E00]" aria-hidden="true" />
+            <p className="flex items-center justify-center gap-2 text-[11px] font-bold tracking-[0.24em] text-zinc-500 dark:text-zinc-400">
+              <Languages className="h-4 w-4 text-[#B87E00] dark:text-[#F5B400]" aria-hidden="true" />
               MULTILINGUAL BY DESIGN
             </p>
-            <h2 className="mx-auto mt-4 max-w-2xl font-serif text-[clamp(1.8rem,3.5vw,3rem)] font-semibold tracking-tight text-[#0B0C0F]">
+            <h2 className="mx-auto mt-4 max-w-2xl font-serif text-[clamp(1.8rem,3.5vw,3rem)] font-semibold tracking-tight text-[#0B0C0F] dark:text-white">
               Speak in your language
             </h2>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-2.5" role="list" aria-label="Supported languages">
               {LANGUAGE_CHIPS.map((l) => (
-                <span key={l} role="listitem" className="cursor-default rounded-full border border-zinc-300/80 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B87E00] hover:text-[#0B0C0F] hover:shadow-[0_10px_28px_rgba(184,126,0,0.18)]">
+                <span key={l} role="listitem" className="cursor-default rounded-full border border-zinc-300/80 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B87E00] hover:text-[#0B0C0F] hover:shadow-[0_10px_28px_rgba(184,126,0,0.18)] dark:border-white/15 dark:bg-white/5 dark:text-zinc-300 dark:hover:border-[#F5B400] dark:hover:text-white">
                   {l}
                 </span>
               ))}
             </div>
-            <p className="mx-auto mt-7 max-w-xl font-serif text-xl italic leading-relaxed text-zinc-600">
+            <p className="mx-auto mt-7 max-w-xl font-serif text-xl italic leading-relaxed text-zinc-600 dark:text-zinc-400">
               “Your community does not need to speak in one language to be heard.”
             </p>
           </Reveal>
@@ -796,23 +796,23 @@ export default function CitizenPage() {
       {/* ================= EXAMPLES ================= */}
       <section className="mx-auto max-w-[1360px] px-5 py-16 md:px-8 min-[1440px]:px-10 lg:py-20">
         <Reveal>
-          <p className="text-[11px] font-bold tracking-[0.24em] text-zinc-500">START FROM A REAL CONCERN</p>
-          <h2 className="mt-3 font-serif text-[clamp(1.8rem,3.5vw,3rem)] font-semibold tracking-tight text-[#0B0C0F]">
+          <p className="text-[11px] font-bold tracking-[0.24em] text-zinc-500 dark:text-zinc-400">START FROM A REAL CONCERN</p>
+          <h2 className="mt-3 font-serif text-[clamp(1.8rem,3.5vw,3rem)] font-semibold tracking-tight text-[#0B0C0F] dark:text-white">
             What can you tell JanSetu?
           </h2>
-          <p className="mt-2 text-[15px] text-zinc-500">Tap any example — it will fill the form above, ready for you to edit.</p>
+          <p className="mt-2 text-[15px] text-zinc-500 dark:text-zinc-400">Tap any example — it will fill the form above, ready for you to edit.</p>
         </Reveal>
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {EXAMPLES.map((ex, i) => (
             <Reveal key={ex.category} delay={i * 70}>
               <button
                 onClick={() => applyExample(ex.text)}
-                className="group block w-full rounded-2xl border border-zinc-200/80 bg-white p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:border-[#F5B400]/60 hover:shadow-[0_20px_50px_rgba(184,126,0,0.15)]"
+                className="group block w-full rounded-2xl border border-zinc-200/80 bg-white p-6 text-left transition-all duration-200 hover:-translate-y-1 hover:border-[#F5B400]/60 hover:shadow-[0_20px_50px_rgba(184,126,0,0.15)] dark:border-white/10 dark:bg-[#101318]"
               >
                 <span className="inline-block rounded-full bg-[#0B0C0F] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#F5B400]">
                   {ex.category}
                 </span>
-                <span className="mt-3 block text-[16px] leading-relaxed text-zinc-700">“{ex.text}”</span>
+                <span className="mt-3 block text-[16px] leading-relaxed text-zinc-700 dark:text-zinc-300">“{ex.text}”</span>
                 <span className="mt-4 flex items-center gap-1.5 text-sm font-semibold text-[#B87E00]">
                   Use this example
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />

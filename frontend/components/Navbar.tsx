@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
+import { useTheme } from "@/components/ThemeContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -18,6 +20,7 @@ const LINKS = [
 export default function Navbar() {
   const path = usePathname();
   const { user, signout } = useAuth();
+  const { theme, mounted, toggle } = useTheme();
   const [open, setOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [aiLive, setAiLive] = useState<boolean | null>(null);
@@ -59,6 +62,18 @@ export default function Navbar() {
             AI SYSTEM {aiLive == null ? "UNKNOWN" : aiLive ? "LIVE" : "FALLBACK"}
           </span>
           <span className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] tracking-wide text-zinc-400">Demo Mode</span>
+          <button
+            onClick={toggle}
+            title="Switch theme"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/15 text-zinc-300 transition-all duration-200 hover:border-[#F5B400]/60 hover:text-[#F5B400]"
+          >
+            {mounted ? (
+              theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <span className="h-4 w-4" aria-hidden="true" />
+            )}
+          </button>
           {user ? (
             <div className="relative">
               <button onClick={() => setMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={menuOpen}
@@ -106,6 +121,14 @@ export default function Navbar() {
             ))}
           </ul>
           <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
+            <button
+              onClick={toggle}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="flex items-center gap-2 rounded-md border border-white/15 px-4 py-2 text-sm text-zinc-200"
+            >
+              {mounted && theme === "dark" ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
             {user ? (
               <>
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#F5B400] text-xs font-semibold text-black" aria-hidden="true">

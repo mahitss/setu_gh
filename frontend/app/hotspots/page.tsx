@@ -100,25 +100,25 @@ function HotspotsPage() {
 
       <div className="mt-4 flex flex-wrap gap-3 text-sm">
         <label>State{" "}
-          <select className="rounded-md border p-1.5" value={fState} onChange={(e) => onFilter({ state: e.target.value })}>
+          <select className="rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-1.5" value={fState} onChange={(e) => onFilter({ state: e.target.value })}>
             <option value="">All</option>
             {states.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </label>
         <label>District{" "}
-          <select className="rounded-md border p-1.5" value={fDistrict} onChange={(e) => onFilter({ district: e.target.value })}>
+          <select className="rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-1.5" value={fDistrict} onChange={(e) => onFilter({ district: e.target.value })}>
             <option value="">All</option>
             {districts.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </label>
         <label>Category{" "}
-          <select className="rounded-md border p-1.5" value={fCategory} onChange={(e) => onFilter({ category: e.target.value })}>
+          <select className="rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-1.5" value={fCategory} onChange={(e) => onFilter({ category: e.target.value })}>
             <option value="">All</option>
             {CATEGORIES.map((c) => <option key={c} value={c}>{title(c)}</option>)}
           </select>
         </label>
         <label>Priority{" "}
-          <select className="rounded-md border p-1.5" value={fPriority} onChange={(e) => onFilter({ priority: e.target.value })}>
+          <select className="rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-1.5" value={fPriority} onChange={(e) => onFilter({ priority: e.target.value })}>
             <option value="">All</option>
             {PRIORITIES.map((p) => <option key={p} value={p}>{title(p)}</option>)}
           </select>
@@ -133,7 +133,7 @@ function HotspotsPage() {
         )}
       </div>
 
-      {error && <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-md border border-[#C93636]/40 bg-[#C93636]/10 p-3 text-sm text-[#C93636] dark:text-[#F87171]">{error}</p>}
       {loading ? (
         <div className="mt-4 space-y-2"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /></div>
       ) : hotspots.length === 0 ? (
@@ -156,19 +156,19 @@ function HotspotsPage() {
         </div>
       ) : (
         <>
-        <p className="mt-4 text-sm text-zinc-500">Showing {fmtInt(Math.min(20, hotspots.length))} of {fmtInt(total)} matching hotspots.</p>
-        <div className="mt-2 overflow-x-auto rounded-md border">
+        <p className="mt-4 text-sm text-[var(--js-muted)]">Showing {fmtInt(Math.min(20, hotspots.length))} of {fmtInt(total)} matching hotspots.</p>
+        <div className="mt-2 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--js-surface)]">
           <table className="w-full text-left text-sm">
-            <thead className="bg-zinc-50">
+            <thead className="bg-[var(--js-track)]/60">
               <tr>
                 {["District", "Category", "Demand", "Trend", "Infrastructure Gap", "Population", "Priority"].map((h) => (
                   <th key={h} className="px-3 py-2 font-medium">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-[var(--border)]">
               {hotspots.slice(0, 20).map((h) => (
-                <tr key={h.id} className="border-t hover:bg-zinc-50">
+                <tr key={h.id} className="transition-colors hover:bg-[var(--js-track)]/50">
                   <td className="px-3 py-2">
                     <Link className="underline" href={hotspotHref(h)}>{h.district}, {h.state}</Link>
                   </td>

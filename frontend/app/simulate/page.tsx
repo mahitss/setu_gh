@@ -28,7 +28,7 @@ type CompareOut = {
 };
 
 const SELECT_CLS =
-  "h-[52px] w-full appearance-none rounded-md border border-[#d8d8d8] bg-white pl-4 pr-10 text-[15px]";
+  "h-[52px] w-full appearance-none rounded-md border border-[#d8d8d8] bg-white pl-4 pr-10 text-[15px] dark:border-[var(--border)] dark:bg-[var(--js-surface)]";
 
 function LabSelect({ id, label, value, onChange, disabled, children }: {
   id: string;
@@ -46,7 +46,7 @@ function LabSelect({ id, label, value, onChange, disabled, children }: {
           onChange={(e) => onChange(e.target.value)}>
           {children}
         </select>
-        <span aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500">▾</span>
+        <span aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[var(--js-muted)]">▾</span>
       </div>
     </div>
   );
@@ -185,50 +185,50 @@ function Simulator() {
     <main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <p className="text-sm font-semibold tracking-widest text-zinc-500">INVESTMENT SCENARIO LAB</p>
+          <p className="text-sm font-semibold tracking-widest text-[var(--js-muted)]">INVESTMENT SCENARIO LAB</p>
           <h1 className="mt-1 text-4xl font-semibold tracking-tight">Model development interventions before committing resources.</h1>
-          <p className="mt-3 max-w-xl text-zinc-600">
+          <p className="mt-3 max-w-xl text-[var(--js-muted)]">
             Explore prototype investment scenarios using JanSetu&apos;s civic intelligence,
             infrastructure gaps and citizen demand. What could change if we invest differently?
           </p>
-          <p className="mt-2 text-xs text-zinc-500">Prototype estimates — not guaranteed outcomes.</p>
+          <p className="mt-2 text-xs text-[var(--js-muted)]">Prototype estimates — not guaranteed outcomes.</p>
         </div>
         <aside className="h-fit rounded-md border p-4 text-sm" aria-label="Scenario status">
-          <p className="text-xs font-semibold tracking-widest text-zinc-500">SCENARIO STATUS</p>
+          <p className="text-xs font-semibold tracking-widest text-[var(--js-muted)]">SCENARIO STATUS</p>
           <dl className="mt-2 space-y-1">
-            <div className="flex justify-between"><dt className="text-zinc-500">Mode</dt><dd className="font-medium">Prototype</dd></div>
-            <div className="flex justify-between"><dt className="text-zinc-500">Engine</dt><dd className="font-medium">Deterministic simulation</dd></div>
-            <div className="flex justify-between"><dt className="text-zinc-500">Evidence</dt><dd className="font-medium">{context ? "linked" : "baseline only"}</dd></div>
+            <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Mode</dt><dd className="font-medium">Prototype</dd></div>
+            <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Engine</dt><dd className="font-medium">Deterministic simulation</dd></div>
+            <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Evidence</dt><dd className="font-medium">{context ? "linked" : "baseline only"}</dd></div>
           </dl>
         </aside>
       </div>
 
       {/* CONTEXT */}
       <section className="mt-8 rounded-md border p-6" aria-label="District context">
-        <h2 className="text-sm font-semibold tracking-widest text-zinc-500">DISTRICT INTELLIGENCE</h2>
+        <h2 className="text-sm font-semibold tracking-widest text-[var(--js-muted)]">DISTRICT INTELLIGENCE</h2>
         {context ? (
           <>
             <p className="mt-2 text-2xl font-semibold">{context.district}</p>
-            <p className="text-sm text-zinc-500">{context.state}</p>
+            <p className="text-sm text-[var(--js-muted)]">{context.state}</p>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
-              <div><dd className="text-2xl font-semibold">{title(context.category)}</dd><dt className="mt-1 text-xs text-zinc-500">Primary need</dt></div>
-              <div><dd className="text-2xl font-semibold">{fmtInt(context.signals)}</dd><dt className="mt-1 text-xs text-zinc-500">Citizen demand · {trendLabel(context.trend_pct)}</dt></div>
-              <div><dd className="text-2xl font-semibold">{context.gap_index?.toFixed(2) ?? "—"}</dd><dt className="mt-1 text-xs text-zinc-500">Infrastructure gap</dt></div>
-              <div><dd className="text-2xl font-semibold">{fmtInr(context.investment_inr)}</dd><dt className="mt-1 text-xs text-zinc-500">Current investment</dt></div>
-              <div><dd className="text-2xl font-semibold">{fmtInt(context.population)}</dd><dt className="mt-1 text-xs text-zinc-500">Population context</dt></div>
-              <div><dd className="text-2xl font-semibold">{context.priority_score.toFixed(2)}</dd><dt className="mt-1 text-xs text-zinc-500">Priority score</dt></div>
+              <div><dd className="text-2xl font-semibold">{title(context.category)}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Primary need</dt></div>
+              <div><dd className="text-2xl font-semibold">{fmtInt(context.signals)}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Citizen demand · {trendLabel(context.trend_pct)}</dt></div>
+              <div><dd className="text-2xl font-semibold">{context.gap_index?.toFixed(2) ?? "—"}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Infrastructure gap</dt></div>
+              <div><dd className="text-2xl font-semibold">{fmtInr(context.investment_inr)}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Current investment</dt></div>
+              <div><dd className="text-2xl font-semibold">{fmtInt(context.population)}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Population context</dt></div>
+              <div><dd className="text-2xl font-semibold">{context.priority_score.toFixed(2)}</dd><dt className="mt-1 text-xs text-[var(--js-muted)]">Priority score</dt></div>
             </dl>
           </>
         ) : (
-          <p className="mt-2 text-sm text-zinc-500">No hotspot row for this district/sector combination — simulation still uses baseline demographics and infrastructure.</p>
+          <p className="mt-2 text-sm text-[var(--js-muted)]">No hotspot row for this district/sector combination — simulation still uses baseline demographics and infrastructure.</p>
         )}
       </section>
 
       {/* BUILDER */}
       <section id="scenario-builder" className="mt-8 rounded-md border p-6" aria-label="Scenario builder">
         <h2 className="text-2xl font-semibold">Build a scenario</h2>
-        <p className="mt-1 text-sm text-zinc-600">Choose where and how much to invest. JanSetu calculates a prototype impact estimate from the selected district context.</p>
-        <h3 className="mt-6 text-xs font-semibold tracking-widest text-zinc-500">STEP 01 — LOCATION</h3>
+        <p className="mt-1 text-sm text-[var(--js-muted)]">Choose where and how much to invest. JanSetu calculates a prototype impact estimate from the selected district context.</p>
+        <h3 className="mt-6 text-xs font-semibold tracking-widest text-[var(--js-muted)]">STEP 01 — LOCATION</h3>
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <LabSelect id="s-state" label="State" value={state} disabled={loading}
             onChange={(v) => changeLocation(v, STATE_DISTRICTS[v][0], sector, "")}>
@@ -239,7 +239,7 @@ function Simulator() {
             {STATE_DISTRICTS[state].map((d) => <option key={d} value={d}>{d}</option>)}
           </LabSelect>
         </div>
-        <h3 className="mt-6 text-xs font-semibold tracking-widest text-zinc-500">STEP 02 — SECTOR</h3>
+        <h3 className="mt-6 text-xs font-semibold tracking-widest text-[var(--js-muted)]">STEP 02 — SECTOR</h3>
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <LabSelect id="s-sector" label="Sector" value={sector} disabled={loading}
             onChange={(v) => changeLocation(state, district, v, "")}>
@@ -250,35 +250,35 @@ function Simulator() {
             {(interventions[sector] ?? []).map((i) => <option key={i} value={i}>{title(i)}</option>)}
           </LabSelect>
         </div>
-        <h3 className="mt-6 text-xs font-semibold tracking-widest text-zinc-500">STEP 03 — BUDGET</h3>
-        <p className="mt-3 text-sm text-zinc-500">Budget allocation</p>
+        <h3 className="mt-6 text-xs font-semibold tracking-widest text-[var(--js-muted)]">STEP 03 — BUDGET</h3>
+        <p className="mt-3 text-sm text-[var(--js-muted)]">Budget allocation</p>
         <p className="text-4xl font-semibold tabular-nums">₹{budgetCr} Cr</p>
         <input id="s-budget" type="range" min={10} max={500} step={5} value={Math.min(500, Math.max(10, budgetCr))}
           className="mt-3 w-full accent-black" disabled={loading} onChange={(e) => onSlider(Number(e.target.value))}
           aria-label="Budget in crore rupees" />
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {PRESETS.map((p) => (
-            <button key={p} className={`rounded-md border px-4 py-2 text-sm transition-colors duration-150 ${budgetCr === p ? "bg-black text-white" : "bg-white"}`}
+            <button key={p} className={`rounded-md border border-[var(--border)] px-4 py-2 text-sm transition-colors duration-150 ${budgetCr === p ? "bg-black text-white dark:bg-white dark:text-black" : "bg-[var(--js-surface)]"}`}
               onClick={() => run(p)} disabled={loading}>₹{p} Cr</button>
           ))}
           <span className="ml-2 flex items-center gap-2 text-sm">
-            <label htmlFor="s-custom" className="text-zinc-500">Custom amount</label>
+            <label htmlFor="s-custom" className="text-[var(--js-muted)]">Custom amount</label>
             <span className="flex items-center gap-1">
-              <span className="text-zinc-500">₹</span>
+              <span className="text-[var(--js-muted)]">₹</span>
               <input id="s-custom" className="w-20 rounded-md border border-[#d8d8d8] p-2" value={custom} inputMode="decimal"
                 onChange={(e) => setCustom(e.target.value)} disabled={loading} aria-label="Custom budget in crore" />
-              <span className="text-zinc-500">Cr</span>
+              <span className="text-[var(--js-muted)]">Cr</span>
             </span>
             <Button variant="outline" size="sm" onClick={() => run(Number(custom))} disabled={loading}>Apply</Button>
           </span>
         </div>
       </section>
 
-      {error && <p role="alert" className="mt-4 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+      {error && <p role="alert" className="mt-4 rounded-md border border-[#C93636]/40 bg-[#C93636]/10 p-3 text-sm text-[#C93636] dark:text-[#F87171]">{error}</p>}
       {loading && (
-        <div className="mt-4 rounded-md border border-[#E5E7EB] bg-white p-4" role="status" aria-live="polite">
-          <p className="text-xs font-semibold tracking-widest text-zinc-500">JANSETU INTELLIGENCE</p>
-          <p className="mt-2 text-sm text-zinc-600">
+        <div className="mt-4 rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-4" role="status" aria-live="polite">
+          <p className="text-xs font-semibold tracking-widest text-[var(--js-muted)]">JANSETU INTELLIGENCE</p>
+          <p className="mt-2 text-sm text-[var(--js-muted)]">
             <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#635BFF]" />
             Calculating scenario — reading district baseline, applying intervention model…
           </p>
@@ -291,87 +291,87 @@ function Simulator() {
             <div aria-hidden="true" className="pointer-events-none absolute inset-0">
               <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[#635BFF] opacity-[0.12] blur-3xl" />
             </div>
-            <p className="relative text-xs font-semibold tracking-widest text-zinc-400">SCENARIO OUTCOME</p>
+            <p className="relative text-xs font-semibold tracking-widest text-[var(--js-faint)]">SCENARIO OUTCOME</p>
             <p className="relative mt-2 text-4xl font-semibold tabular-nums">₹{result.scenario.budget_cr} Cr</p>
             <p className="relative mt-1 text-lg text-zinc-300">{title(result.scenario.intervention)}</p>
-            <p className="relative text-sm text-zinc-400">Prototype estimate</p>
+            <p className="relative text-sm text-[var(--js-faint)]">Prototype estimate</p>
             <p key={result.estimate.population_reached} className="relative mt-4 text-5xl font-semibold tabular-nums animate-[fade-up_.4s_ease-out]">{fmtInt(result.estimate.population_reached)}</p>
-            <p className="relative text-sm text-zinc-400">people potentially reached</p>
+            <p className="relative text-sm text-[var(--js-faint)]">people potentially reached</p>
             <dl className="mt-5 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Population affected</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Population affected</dt>
                 <dd className="mt-1 text-xl font-semibold">{fmtInt(result.baseline.population_affected)}</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Current infrastructure gap</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Current infrastructure gap</dt>
                 <dd className="mt-1 text-xl font-semibold">{(result.baseline.gap_index * 100).toFixed(0)}%</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Estimated reach</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Estimated reach</dt>
                 <dd className="mt-1 text-xl font-semibold">{fmtInt(result.estimate.population_reached)}</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Projected gap</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Projected gap</dt>
                 <dd className="mt-1 text-xl font-semibold">−{(result.estimate.gap_reduction * 100).toFixed(1)}%</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Coverage improvement</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Coverage improvement</dt>
                 <dd className="mt-1 text-xl font-semibold">+{(result.estimate.coverage_improvement * 100).toFixed(1)}%</dd>
               </div>
               <div className="rounded-md border border-white/10 bg-[#181C24] p-4">
-                <dt className="text-xs text-zinc-400">Locations affected</dt>
+                <dt className="text-xs text-[var(--js-faint)]">Locations affected</dt>
                 <dd className="mt-1 text-xl font-semibold">{result.estimate.locations_affected}</dd>
               </div>
             </dl>
           </section>
 
           <section className="mt-6 rounded-md border p-6" aria-label="Before after">
-            <h2 className="text-sm font-semibold tracking-widest text-zinc-500">BEFORE → AFTER</h2>
+            <h2 className="text-sm font-semibold tracking-widest text-[var(--js-muted)]">BEFORE → AFTER</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-md bg-zinc-50 p-4">
-                <p className="text-xs font-semibold tracking-wide text-zinc-500">CURRENT</p>
+              <div className="rounded-md bg-[var(--js-track)]/60 p-4">
+                <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">CURRENT</p>
                 <p className="mt-1">Infrastructure gap <b>{(result.baseline.gap_index * 100).toFixed(0)}%</b></p>
                 <p>Coverage <b>{(result.baseline.coverage_index * 100).toFixed(0)}%</b></p>
               </div>
               <div className="rounded-md border border-dashed p-4">
-                <p className="text-xs font-semibold tracking-wide text-zinc-500">INTERVENTION</p>
+                <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">INTERVENTION</p>
                 <p className="mt-1 font-medium">{title(result.scenario.intervention)} @ ₹{result.scenario.budget_cr} Cr</p>
               </div>
-              <div className="rounded-md bg-zinc-50 p-4">
-                <p className="text-xs font-semibold tracking-wide text-zinc-500">PROJECTED</p>
+              <div className="rounded-md bg-[var(--js-track)]/60 p-4">
+                <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">PROJECTED</p>
                 <p className="mt-1">Infrastructure gap <b>{(projGap * 100).toFixed(1)}%</b></p>
                 <p>Coverage <b>{(projCoverage * 100).toFixed(1)}%</b></p>
               </div>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">Prototype model estimate — not a guaranteed real-world outcome.</p>
+            <p className="mt-2 text-xs text-[var(--js-muted)]">Prototype model estimate — not a guaranteed real-world outcome.</p>
           </section>
 
           <section className="mt-6 rounded-md border p-6">
-            <h2 className="text-sm font-semibold tracking-widest text-zinc-500">
+            <h2 className="text-sm font-semibold tracking-widest text-[var(--js-muted)]">
               SCENARIO ESTIMATE — {title(result.scenario.intervention)} @ ₹{result.scenario.budget_cr} Cr
             </h2>
             <dl className="mt-2 space-y-1 text-sm">
-              <div className="flex justify-between"><dt>Estimated reach</dt><dd className="font-semibold">{fmtInt(result.estimate.population_reached)} <span className="font-normal text-zinc-500">(prototype estimate)</span></dd></div>
-              <div className="flex justify-between"><dt>Coverage improvement</dt><dd className="font-semibold">+{(result.estimate.coverage_improvement * 100).toFixed(1)}% <span className="font-normal text-zinc-500">(prototype estimate)</span></dd></div>
-              <div className="flex justify-between"><dt>Gap reduction</dt><dd className="font-semibold">{(result.estimate.gap_reduction * 100).toFixed(1)}% <span className="font-normal text-zinc-500">(prototype estimate)</span></dd></div>
+              <div className="flex justify-between"><dt>Estimated reach</dt><dd className="font-semibold">{fmtInt(result.estimate.population_reached)} <span className="font-normal text-[var(--js-muted)]">(prototype estimate)</span></dd></div>
+              <div className="flex justify-between"><dt>Coverage improvement</dt><dd className="font-semibold">+{(result.estimate.coverage_improvement * 100).toFixed(1)}% <span className="font-normal text-[var(--js-muted)]">(prototype estimate)</span></dd></div>
+              <div className="flex justify-between"><dt>Gap reduction</dt><dd className="font-semibold">{(result.estimate.gap_reduction * 100).toFixed(1)}% <span className="font-normal text-[var(--js-muted)]">(prototype estimate)</span></dd></div>
               <div className="flex justify-between"><dt>Locations affected</dt><dd className="font-semibold">{result.estimate.locations_affected}</dd></div>
             </dl>
-            <h3 className="mt-4 text-sm font-semibold tracking-wide text-zinc-500">HOW THIS SCENARIO IS CALCULATED</h3>
-            <p className="mt-2 text-sm text-zinc-600">
+            <h3 className="mt-4 text-sm font-semibold tracking-wide text-[var(--js-muted)]">HOW THIS SCENARIO IS CALCULATED</h3>
+            <p className="mt-2 text-sm text-[var(--js-muted)]">
               Citizen demand + Infrastructure gap + Population context + Existing investment +
               Selected intervention + Budget
             </p>
             <p className="mt-1 text-sm font-medium">↓</p>
             <p className="text-sm font-medium">Prototype scenario estimate</p>
-            <p className="mt-1 text-xs text-zinc-500">Deterministic backend calculations — Gemini never generates these numbers.</p>
-            <ul className="mt-2 list-disc pl-5 text-xs text-zinc-600">
+            <p className="mt-1 text-xs text-[var(--js-muted)]">Deterministic backend calculations — Gemini never generates these numbers.</p>
+            <ul className="mt-2 list-disc pl-5 text-xs text-[var(--js-muted)]">
               {result.assumptions.map((a) => <li key={a}>{a}</li>)}
             </ul>
           </section>
 
           {context && (
             <section className="mt-4 rounded-md border p-5">
-              <h2 className="text-sm font-semibold tracking-wide text-zinc-500">WHY THIS SCENARIO?</h2>
+              <h2 className="text-sm font-semibold tracking-wide text-[var(--js-muted)]">WHY THIS SCENARIO?</h2>
               <ul className="mt-2 space-y-1 text-sm">
                 <li>• Citizen demand: <b>{fmtInt(context.signals)} signals</b> in {context.district}</li>
                 <li>• Infrastructure gap: <b>{context.gap_index?.toFixed(2) ?? "—"}</b></li>
@@ -404,10 +404,10 @@ function Simulator() {
 
       {compare && (
         <section className="mt-4 rounded-md border p-5">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">COMPARE SCENARIOS — {title(compare.scenario.intervention)}</h2>
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--js-muted)]">COMPARE SCENARIOS — {title(compare.scenario.intervention)}</h2>
           <div className="mt-3 overflow-x-auto rounded-md border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-zinc-50">
+              <thead className="bg-[var(--js-track)]/60">
                 <tr><th className="px-3 py-2">Intervention</th><th className="px-3 py-2">Budget</th><th className="px-3 py-2">Reached</th><th className="px-3 py-2">Gap reduction</th><th className="px-3 py-2">Coverage</th></tr>
               </thead>
               <tbody>
@@ -427,27 +427,27 @@ function Simulator() {
             {compare.comparison.map((c) => (
               <div key={c.budget_cr} className="flex items-center gap-3 text-sm">
                 <span className="w-20">₹{c.budget_cr} Cr</span>
-                <span className="h-3 flex-1 rounded bg-zinc-100">
-                  <span className="block h-3 rounded bg-black" style={{ width: `${Math.round((c.population_reached / maxReach) * 100)}%` }} />
+                <span className="h-3 flex-1 rounded bg-[var(--js-track)]">
+                  <span className="block h-3 rounded bg-black dark:bg-[#F5B400]" style={{ width: `${Math.round((c.population_reached / maxReach) * 100)}%` }} />
                 </span>
                 <span className="w-24 text-right">{fmtInt(c.population_reached)}</span>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-xs text-zinc-500">{compare.label}</p>
+          <p className="mt-2 text-xs text-[var(--js-muted)]">{compare.label}</p>
         </section>
       )}
 
       {result && (
         <section className="mt-4 rounded-md border p-5">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">SCENARIO SUMMARY</h2>
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--js-muted)]">SCENARIO SUMMARY</h2>
           <dl className="mt-2 space-y-1 text-sm">
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">District</dt><dd className="font-medium">{result.scenario.district}, {result.scenario.state}</dd></div>
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Need</dt><dd className="font-medium">{title(result.scenario.category)}</dd></div>
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Selected intervention</dt><dd className="font-medium">{title(result.scenario.intervention)}</dd></div>
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Budget</dt><dd className="font-medium">₹{result.scenario.budget_cr} Cr</dd></div>
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Estimated effect</dt><dd className="font-medium">{fmtInt(result.estimate.population_reached)} reached, gap −{(result.estimate.gap_reduction * 100).toFixed(1)}%</dd></div>
-            <div className="flex gap-2"><dt className="w-40 shrink-0 text-zinc-500">Evidence</dt><dd className="font-medium">{context ? `${fmtInt(context.signals)} signals, gap ${context.gap_index?.toFixed(2) ?? "—"}` : "baseline demographics and infrastructure"}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">District</dt><dd className="font-medium">{result.scenario.district}, {result.scenario.state}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">Need</dt><dd className="font-medium">{title(result.scenario.category)}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">Selected intervention</dt><dd className="font-medium">{title(result.scenario.intervention)}</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">Budget</dt><dd className="font-medium">₹{result.scenario.budget_cr} Cr</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">Estimated effect</dt><dd className="font-medium">{fmtInt(result.estimate.population_reached)} reached, gap −{(result.estimate.gap_reduction * 100).toFixed(1)}%</dd></div>
+            <div className="flex gap-2"><dt className="w-40 shrink-0 text-[var(--js-muted)]">Evidence</dt><dd className="font-medium">{context ? `${fmtInt(context.signals)} signals, gap ${context.gap_index?.toFixed(2) ?? "—"}` : "baseline demographics and infrastructure"}</dd></div>
           </dl>
           <div className="mt-4 flex flex-wrap gap-3">
             {context && (
@@ -461,12 +461,12 @@ function Simulator() {
       )}
 
       <section className="mt-6 rounded-md border p-6">
-        <h2 className="text-sm font-semibold tracking-widest text-zinc-500">TRANSPARENCY</h2>
+        <h2 className="text-sm font-semibold tracking-widest text-[var(--js-muted)]">TRANSPARENCY</h2>
         <div className="mt-3 grid grid-cols-1 gap-4 text-xs sm:grid-cols-2 lg:grid-cols-4">
-          <div><p className="font-semibold">AI layer</p><p className="mt-1 text-zinc-600">Google Gemini assists with language understanding and explanation.</p></div>
-          <div><p className="font-semibold">Data layer</p><p className="mt-1 text-zinc-600">Synthetic demonstration dataset for this prototype.</p></div>
-          <div><p className="font-semibold">Calculation layer</p><p className="mt-1 text-zinc-600">Numerical outputs are generated by JanSetu&apos;s deterministic simulation engine.</p></div>
-          <div><p className="font-semibold">Scenario status</p><p className="mt-1 text-zinc-600">Prototype estimate — not a guaranteed outcome.</p></div>
+          <div><p className="font-semibold">AI layer</p><p className="mt-1 text-[var(--js-muted)]">Google Gemini assists with language understanding and explanation.</p></div>
+          <div><p className="font-semibold">Data layer</p><p className="mt-1 text-[var(--js-muted)]">Synthetic demonstration dataset for this prototype.</p></div>
+          <div><p className="font-semibold">Calculation layer</p><p className="mt-1 text-[var(--js-muted)]">Numerical outputs are generated by JanSetu&apos;s deterministic simulation engine.</p></div>
+          <div><p className="font-semibold">Scenario status</p><p className="mt-1 text-[var(--js-muted)]">Prototype estimate — not a guaranteed outcome.</p></div>
         </div>
       </section>
     </main>
@@ -476,7 +476,7 @@ function Simulator() {
 
 export default function SimulatePage() {
   return (
-    <Suspense fallback={<main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12"><p className="text-zinc-600">Loading simulator…</p></main>}>
+    <Suspense fallback={<main className="mx-auto max-w-[1280px] px-6 md:px-10 py-12"><p className="text-[var(--js-muted)]">Loading simulator…</p></main>}>
       <Simulator />
     </Suspense>
   );

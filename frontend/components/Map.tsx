@@ -40,13 +40,13 @@ export const PRIORITY_TIER: Record<string, string> = {
 
 export function MapLegend() {
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-zinc-500">
+    <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-[var(--js-muted)]">
       <span>
-        Demand intensity <span className="font-medium text-zinc-700">LOW → HIGH</span>
+        Demand intensity <span className="font-medium">LOW → HIGH</span>
       </span>
-      <span>Trend <b className="text-red-700">↑ Rising</b> · <b>→ Stable</b> · <b className="text-green-700">↓ Declining</b></span>
+      <span>Trend <b className="text-[#C93636] dark:text-[#F87171]">↑ Rising</b> · <b>→ Stable</b> · <b className="text-[#138A52] dark:text-[#34D399]">↓ Declining</b></span>
       <span title="P0 critical (≥0.85) · P1 high (≥0.7) · P2 medium (≥0.5) · P3 low/minimal (<0.5)">
-        Priority <b className="text-zinc-700">P0 / P1 / P2 / P3</b>
+        Priority <b>P0 / P1 / P2 / P3</b>
       </span>
     </div>
   );
@@ -126,9 +126,9 @@ export default function Map({ hotspots, selectedId, onSelect }: {
   const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
   return (
     <div>
-      <svg viewBox="0 0 100 100" className="h-[500px] w-full rounded-md border border-[#E5E7EB] bg-[#F1F3F5]" role="img" aria-label="India demand hotspots map (fallback)">
-        <text x="50" y="7" textAnchor="middle" fontSize="4.5" fontWeight="bold" fill="#3f3f46" letterSpacing="2">INDIA</text>
-        <text x="50" y="12" textAnchor="middle" fontSize="2.4" fill="#71717a" letterSpacing="1">DEMAND HOTSPOTS</text>
+      <svg viewBox="0 0 100 100" className="h-[500px] w-full rounded-md border border-[var(--border)] bg-[#F1F3F5] dark:bg-[#0B0E14]" role="img" aria-label="India demand hotspots map (fallback)">
+        <text x="50" y="7" textAnchor="middle" fontSize="4.5" fontWeight="bold" letterSpacing="2" className="fill-zinc-700 dark:fill-zinc-200">INDIA</text>
+        <text x="50" y="12" textAnchor="middle" fontSize="2.4" letterSpacing="1" className="fill-zinc-500 dark:fill-zinc-400">DEMAND HOTSPOTS</text>
         <defs>
           <filter id="hs-heat" x="-60%" y="-60%" width="220%" height="220%">
             <feGaussianBlur stdDeviation="2.4" />
@@ -165,7 +165,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
         {pts.length === 0 && <text x="50" y="50" textAnchor="middle" fontSize="3">No coordinates</text>}
       </svg>
       {selected && (
-        <div className="mt-2 rounded-md border p-3 text-sm">
+        <div className="mt-2 rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-3 text-sm">
           <p className="font-semibold">{title(selected.category)} — {selected.district}, {selected.state}</p>
           <p className="mt-1">{fmtInt(selected.signals)} signals · {trendLabel(selected.trend_pct)}</p>
           <p>Infrastructure gap: {selected.gap_index?.toFixed(2) ?? "—"} ({title(selected.priority_level)} priority)</p>
@@ -173,7 +173,7 @@ export default function Map({ hotspots, selectedId, onSelect }: {
           <a className="mt-1 inline-block underline" href={hotspotHref(selected)}>View Evidence</a>
         </div>
       )}
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-xs text-[var(--js-muted)]">
         {MAPS_KEY ? "Interactive map unavailable — showing fallback." : "Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY for the interactive map."} Circle size = signals; red = high priority. Click a marker for details.
       </p>
       <MapLegend />

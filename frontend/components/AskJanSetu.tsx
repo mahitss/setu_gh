@@ -104,11 +104,11 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
   }
 
   return (
-    <div className="rounded-md border p-5">
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--js-surface)] p-5">
       <h3 className="text-lg font-semibold">Ask JanSetu</h3>
       <div className="mt-3 flex gap-2">
         <input
-          className="w-full rounded-md border p-2.5"
+          className="w-full rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-2.5 placeholder:text-[var(--js-faint)] focus:border-[var(--js-accent)] focus:outline-none"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={(e) => {
@@ -122,34 +122,34 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
       </div>
       <div className="mt-2 flex flex-wrap gap-2 text-xs">
         {EXAMPLES.map((ex) => (
-          <button key={ex} className="rounded-full border px-3 py-1 text-zinc-600 hover:bg-zinc-50"
+          <button key={ex} className="rounded-full border border-[var(--border)] px-3 py-1 text-[var(--js-muted)] transition-colors hover:bg-[var(--js-track)]"
             onClick={() => { setQuestion(ex); run(ex); }} disabled={busy}>
             {ex}
           </button>
         ))}
       </div>
       {history.length > 0 && (
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-[var(--js-muted)]">
           Recent queries:{" "}
           {history.map((h, i) => (
             <span key={h}>
               {i > 0 && " · "}
-              <button className="underline hover:text-black" onClick={() => { setQuestion(h); run(h); }} disabled={busy}>
+              <button className="underline underline-offset-2 hover:text-[var(--foreground)]" onClick={() => { setQuestion(h); run(h); }} disabled={busy}>
                 {h.length > 42 ? `${h.slice(0, 42)}…` : h}
               </button>
             </span>
           ))}
         </p>
       )}
-      {err && <p role="alert" className="mt-3 rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{err}</p>}
+      {err && <p role="alert" className="mt-3 rounded-md border border-[#C93636]/40 bg-[#C93636]/10 p-3 text-sm text-[#C93636] dark:text-[#F87171]">{err}</p>}
 
       {result && (
         <div className="mt-5">
-          <h4 className="text-sm font-semibold tracking-wide text-zinc-500">UNDERSTOOD AS</h4>
+          <h4 className="text-sm font-semibold tracking-wide text-[var(--js-muted)]">UNDERSTOOD AS</h4>
           <dl className="mt-2 grid grid-cols-2 gap-2 text-sm lg:grid-cols-5">
             {understood.map(([k, v]) => (
-              <div key={k} className="rounded-md bg-zinc-50 p-2">
-                <dt className="text-xs text-zinc-500">{k}</dt>
+              <div key={k} className="rounded-md bg-[var(--js-track)]/60 p-2">
+                <dt className="text-xs text-[var(--js-muted)]">{k}</dt>
                 <dd className="font-medium">{v}</dd>
               </div>
             ))}
@@ -164,7 +164,7 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
             </div>
           ) : (
             <>
-              <p className="mt-4 text-sm text-zinc-600">
+              <p className="mt-4 text-sm text-[var(--js-muted)]">
                 {result.count} matching district{result.count === 1 ? "" : "s"} · deterministic engine
                 {result.source === "keyword_parser" ? " (rule-based parse — live AI unavailable)" : ""}
               </p>
@@ -173,14 +173,14 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
               </div>
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {result.matches.slice(0, 6).map((m) => (
-                  <div key={m.id} className="rounded-md border p-4">
-                    <p className="font-semibold">{m.district} <span className="font-normal text-zinc-500">· {m.state}</span></p>
-                    <p className="text-sm text-zinc-600">{title(m.category)} · {title(m.priority_level)} priority</p>
+                  <div key={m.id} className="rounded-md border border-[var(--border)] bg-[var(--js-surface)] p-4">
+                    <p className="font-semibold">{m.district} <span className="font-normal text-[var(--js-muted)]">· {m.state}</span></p>
+                    <p className="text-sm text-[var(--js-muted)]">{title(m.category)} · {title(m.priority_level)} priority</p>
                     <dl className="mt-2 space-y-1 text-sm">
-                      <div className="flex justify-between"><dt className="text-zinc-500">Demand</dt><dd className="font-medium">{fmtInt(m.signals)} signals</dd></div>
-                      <div className="flex justify-between"><dt className="text-zinc-500">Trend</dt><dd className="font-medium">{trendLabel(m.trend_pct)}</dd></div>
-                      <div className="flex justify-between"><dt className="text-zinc-500">Infrastructure gap</dt><dd className="font-medium">{m.gap_index?.toFixed(2) ?? "—"}</dd></div>
-                      <div className="flex justify-between"><dt className="text-zinc-500">Population</dt><dd className="font-medium">{fmtInt(m.population)}</dd></div>
+                      <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Demand</dt><dd className="font-medium">{fmtInt(m.signals)} signals</dd></div>
+                      <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Trend</dt><dd className="font-medium">{trendLabel(m.trend_pct)}</dd></div>
+                      <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Infrastructure gap</dt><dd className="font-medium">{m.gap_index?.toFixed(2) ?? "—"}</dd></div>
+                      <div className="flex justify-between"><dt className="text-[var(--js-muted)]">Population</dt><dd className="font-medium">{fmtInt(m.population)}</dd></div>
                     </dl>
                     <Link href={hotspotHref(m)} className="mt-2 inline-block text-sm underline">View evidence →</Link>
                   </div>
@@ -194,7 +194,7 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
               <p className="text-sm font-medium">Explore further</p>
               <div className="mt-1 flex flex-wrap gap-2 text-xs">
                 {explore.map((ex) => (
-                  <button key={ex} className="rounded-full border px-3 py-1 text-zinc-600 hover:bg-zinc-50"
+                  <button key={ex} className="rounded-full border border-[var(--border)] px-3 py-1 text-[var(--js-muted)] transition-colors hover:bg-[var(--js-track)]"
                     onClick={() => { setQuestion(ex); run(ex); }} disabled={busy}>
                     {ex}
                   </button>
@@ -203,7 +203,7 @@ export default function AskJanSetu({ hotspots }: { hotspots: Hotspot[] }) {
             </div>
           )}
 
-          <div className="mt-4 rounded-md bg-zinc-50 p-3 text-xs text-zinc-600">
+          <div className="mt-4 rounded-md bg-[var(--js-track)]/60 p-3 text-xs text-[var(--js-muted)]">
             <p className="font-semibold">How JanSetu answered</p>
             <p className="mt-1">Natural-language request → AI interpreted filters → deterministic civic data engine → evidence-backed results. Rankings and numbers are computed, never generated.</p>
           </div>
