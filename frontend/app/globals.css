@@ -315,6 +315,46 @@
   animation: js-bar-grow 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 0.1s forwards;
 }
 
+/* Premium range control (simulator budget slider). */
+.js-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--js-accent-strong) 0%, var(--js-accent-strong) var(--fill, 20%), var(--js-track) var(--fill, 20%), var(--js-track) 100%);
+  outline-offset: 4px;
+}
+
+.js-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 9999px;
+  background: var(--js-accent-strong);
+  border: 3px solid #0B0C0F;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.dark .js-range::-webkit-slider-thumb {
+  border-color: #F4F5F7;
+}
+
+.js-range::-moz-range-thumb {
+  height: 22px;
+  width: 22px;
+  border-radius: 9999px;
+  background: var(--js-accent-strong);
+  border: 3px solid #0B0C0F;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.js-range:disabled {
+  opacity: 0.5;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
