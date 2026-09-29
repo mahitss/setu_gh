@@ -101,12 +101,12 @@
 }
 
 .dark {
-  --background: #07090C;
-  --foreground: #F4F5F7;
+  --background: #08090B;
+  --foreground: #F5F3EE;
   /* JanSetu semantic theme tokens — dark overrides */
-  --js-surface: #0D1015;
-  --js-surface-2: #12161D;
-  --js-muted: #8B929E;
+  --js-surface: #0D0F12;
+  --js-surface-2: #111318;
+  --js-muted: #9A9DA3;
   --js-faint: #6B7280;
   --js-accent: #F5B400;
   --js-accent-strong: #F5B400;

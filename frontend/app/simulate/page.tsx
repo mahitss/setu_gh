@@ -206,9 +206,9 @@ function Simulator() {
         <div>
           <p className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">
             <span className="inline-block h-px w-8 bg-[var(--js-accent-strong)]" aria-hidden="true" />
-            INVESTMENT SCENARIO LAB
+            JANSETU · INVESTMENT INTELLIGENCE
           </p>
-          <h1 className="mt-4 font-serif text-[clamp(2rem,4vw,3.2rem)] font-semibold leading-[1.06] tracking-tight">
+          <h1 className="mt-4 font-serif text-[clamp(2.25rem,5.5vw,4.5rem)] font-semibold uppercase leading-[1.02] tracking-tight">
             Model development interventions before committing resources.
           </h1>
           <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--js-muted)]">

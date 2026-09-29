@@ -138,83 +138,41 @@ function HotspotsPage() {
     router.push(hotspotHref(h));
   }
 
-  const selectCls =
-    "h-11 w-full appearance-none rounded-lg border border-[var(--border)] bg-[var(--js-surface)] pl-3 pr-8 text-sm font-medium transition-all duration-200 hover:border-[var(--js-faint)] focus:border-[var(--js-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--js-accent-strong)]/25";
-
   return (
     <main className="mx-auto w-full max-w-[1360px] px-5 md:px-8 min-[1440px]:px-10 pb-16">
       {/* ============ COMMAND HEADER ============ */}
-      <div className="mt-2 grid grid-cols-1 gap-6 pt-6 lg:grid-cols-[1.6fr_1fr] lg:items-end">
-        <div>
-          <p className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">
-            <span className="inline-block h-px w-8 bg-[var(--js-accent-strong)]" aria-hidden="true" />
-            JANSETU · HOTSPOT INTELLIGENCE
-          </p>
-          <h1 className="mt-4 font-serif text-[clamp(2.2rem,4.5vw,3.6rem)] font-semibold leading-[1.04] tracking-tight">
-            Hotspot intelligence
-          </h1>
-          <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-[var(--js-muted)]">
-            Where citizen demand is concentrating across India.
-          </p>
-        </div>
-        <dl className="grid grid-cols-3 gap-4 lg:justify-items-end">
-          <div className="lg:text-right">
-            <dd className="font-serif text-[clamp(1.9rem,3vw,2.6rem)] font-semibold leading-none tabular-nums">
+      <div className="mt-2 pt-6">
+        <p className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">
+          <span className="inline-block h-px w-8 bg-[var(--js-accent-strong)]" aria-hidden="true" />
+          JANSETU · HOTSPOT INTELLIGENCE
+        </p>
+        <h1 className="mt-4 max-w-5xl font-serif text-[clamp(2.25rem,5.5vw,4.5rem)] font-semibold uppercase leading-[1.02] tracking-tight">
+          Where civic demand is concentrating.
+        </h1>
+        <p className="mt-3 max-w-xl text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-[var(--js-muted)]">
+          Identify locations where citizen demand, infrastructure gaps
+          and development context intersect.
+        </p>
+        <dl className="mt-7 grid grid-cols-3 gap-4 border-y border-[var(--border)] py-5">
+          <div className="min-w-0">
+            <dd className="break-words font-serif text-[clamp(1.7rem,3vw,2.4rem)] font-semibold leading-none tabular-nums">
               {loading ? "—" : fmtInt(total)}
             </dd>
-            <dt className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--js-muted)]">Active hotspots</dt>
+            <dt className="mt-1.5 break-words text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--js-muted)]">Active hotspots</dt>
           </div>
-          <div className="lg:border-l lg:border-[var(--border)] lg:pl-4 lg:text-right">
-            <dd className="font-serif text-[clamp(1.9rem,3vw,2.6rem)] font-semibold leading-none">90<span className="text-[0.55em] font-normal text-[var(--js-muted)]">d</span></dd>
-            <dt className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--js-muted)]">Intel window</dt>
+          <div className="min-w-0">
+            <dd className="break-words font-serif text-[clamp(1.7rem,3vw,2.4rem)] font-semibold leading-none">90<span className="text-[0.55em] font-normal text-[var(--js-muted)]">d</span></dd>
+            <dt className="mt-1.5 break-words text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--js-muted)]">Intel window</dt>
           </div>
-          <div className="lg:border-l lg:border-[var(--border)] lg:pl-4 lg:text-right">
-            <dd className="font-serif text-[clamp(1.1rem,1.8vw,1.4rem)] font-semibold leading-tight">Deterministic</dd>
-            <dt className="mt-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--js-muted)]">Ranking</dt>
+          <div className="min-w-0">
+            <dd className="break-words font-serif text-[clamp(1.1rem,1.8vw,1.4rem)] font-semibold leading-tight">Deterministic</dd>
+            <dt className="mt-1.5 break-words text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--js-muted)]">Ranking</dt>
           </div>
         </dl>
       </div>
 
-      {/* ============ FILTER TOOLBAR ============ */}
-      <div className="mt-7 rounded-2xl border border-[var(--border)] bg-[var(--js-surface)] p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">FILTER BY</p>
-          <button
-            onClick={clearFilters}
-            disabled={!hasFilters}
-            className={`rounded-full border px-4 py-1.5 text-[13px] font-medium transition-all duration-200 ${hasFilters ? "border-[var(--border)] hover:border-[var(--js-accent-strong)] hover:text-[var(--foreground)]" : "cursor-default border-[var(--border)]/60 text-[var(--js-faint)]"}`}
-          >
-            Reset filters
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {FILTERS.map((f) => {
-            const val = filters[f.key];
-            const opts = f.options({ states, districts });
-            return (
-              <div key={f.key}>
-                <label htmlFor={`flt-${f.key}`} className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--js-muted)]">
-                  {f.label}
-                </label>
-                <select
-                  id={`flt-${f.key}`}
-                  className={selectCls}
-                  value={val}
-                  onChange={(e) => onFilter({ [f.key]: e.target.value })}
-                >
-                  <option value="">All</option>
-                  {opts.map((o) => (
-                    <option key={o} value={o}>{f.key === "state" || f.key === "district" ? o : title(o)}</option>
-                  ))}
-                </select>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {/* ============ MAP ============ */}
-      <section className="mt-5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[#0A0C10] dark:bg-[#0A0C10]" aria-label="National demand map">
+      <section className="mt-7 overflow-hidden rounded-xl border border-[var(--border)] bg-[#0A0C10] dark:bg-[#0A0C10]" aria-label="National demand map">
         <div className="bg-[#0A0C10]">
           {loading ? (
             <Skeleton className="h-[360px] w-full rounded-none sm:h-[560px]" />
@@ -276,6 +234,40 @@ function HotspotsPage() {
           {loading ? "Loading ranking…" : failed ? "Hotspot data unavailable." : `Showing ${fmtInt(Math.min(20, hotspots.length))} of ${fmtInt(total)} matching hotspots.`}
         </p>
 
+        {/* Filters follow the map; the table answers them. */}
+        <div className="mt-5 border-y border-[var(--border)] py-4">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <p className="text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">FILTER BY</p>
+            {FILTERS.map((f) => {
+              const val = filters[f.key];
+              const opts = f.options({ states, districts });
+              return (
+                <label key={f.key} className="flex items-center gap-2 text-[13px]">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--js-muted)]">{f.label}</span>
+                  <select
+                    id={`flt-${f.key}`}
+                    className="h-10 rounded-lg border border-[var(--border)] bg-[var(--js-surface)] pl-2.5 pr-7 text-[13px] font-medium transition-all duration-200 hover:border-[var(--js-faint)] focus:border-[var(--js-accent-strong)] focus:outline-none focus:ring-2 focus:ring-[var(--js-accent-strong)]/25"
+                    value={val}
+                    onChange={(e) => onFilter({ [f.key]: e.target.value })}
+                  >
+                    <option value="">All</option>
+                    {opts.map((o) => (
+                      <option key={o} value={o}>{f.key === "state" || f.key === "district" ? o : title(o)}</option>
+                    ))}
+                  </select>
+                </label>
+              );
+            })}
+            <button
+              onClick={clearFilters}
+              disabled={!hasFilters}
+              className={`ml-auto rounded-lg border px-4 py-2 text-[13px] font-medium transition-all duration-200 ${hasFilters ? "border-[var(--border)] hover:border-[var(--js-accent-strong)]" : "cursor-default border-[var(--border)]/60 text-[var(--js-faint)]"}`}
+            >
+              Reset filters
+            </button>
+          </div>
+        </div>
+
         {loading ? (
           <div className="mt-5 space-y-2"><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /><Skeleton className="h-12 w-full" /></div>
         ) : hotspots.length === 0 ? (
@@ -298,18 +290,18 @@ function HotspotsPage() {
           </div>
         ) : (
           <>
-            {/* Desktop table */}
-            <div className="mt-5 hidden overflow-x-auto rounded-2xl border border-[var(--border)] bg-[var(--js-surface)] md:block">
+            {/* Desktop table — editorial: thin rules, minimal background */}
+            <div className="mt-2 hidden overflow-x-auto border-b border-[var(--border)] md:block">
               <table className="w-full min-w-[860px] text-left text-sm">
-                <thead className="sticky top-0 bg-[var(--js-track)]/70 backdrop-blur">
-                  <tr>
+                <thead>
+                  <tr className="border-b border-[var(--border)]">
                     {["Location", "Signals", "Trend", "Gap", "Population", "Priority", ""].map((h) => (
                       <th key={h} className="px-5 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--js-muted)]">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--border)]">
-                  {hotspots.slice(0, 20).map((h, i) => (
+                  {hotspots.slice(0, 20).map((h) => (
                     <tr
                       key={h.id}
                       onClick={() => openHotspot(h)}
@@ -321,7 +313,7 @@ function HotspotsPage() {
                           openHotspot(h);
                         }
                       }}
-                      className={`group cursor-pointer transition-colors duration-200 hover:bg-[var(--js-track)]/50 focus:bg-[var(--js-track)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--js-accent-strong)]/50 ${selected?.id === h.id ? "bg-[var(--js-accent-strong)]/[0.07]" : i % 2 === 1 ? "bg-[var(--js-surface-2)]/50" : ""}`}
+                      className={`group cursor-pointer transition-colors duration-200 hover:bg-[var(--js-track)]/40 focus:bg-[var(--js-track)]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--js-accent-strong)]/50 ${selected?.id === h.id ? "bg-[var(--js-accent-strong)]/[0.07]" : ""}`}
                     >
                       <td className="px-5 py-3.5">
                         <p className="font-semibold transition-colors group-hover:text-[var(--js-accent-strong)]">{h.district}</p>
@@ -362,7 +354,7 @@ function HotspotsPage() {
                         openHotspot(h);
                       }
                     }}
-                    className="cursor-pointer rounded-2xl border border-[var(--border)] bg-[var(--js-surface)] p-4 transition-all duration-200 hover:border-[var(--js-accent-strong)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--js-accent-strong)]/50 active:scale-[0.99]"
+                    className="cursor-pointer rounded-xl border border-[var(--border)] bg-[var(--js-surface)] p-4 transition-all duration-200 hover:border-[var(--js-accent-strong)]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--js-accent-strong)]/50 active:scale-[0.99]"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>

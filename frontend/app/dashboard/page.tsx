@@ -349,14 +349,14 @@ export default function DashboardPage() {
           <div>
             <p className="flex items-center gap-2.5 text-[11px] font-bold tracking-[0.24em] text-[var(--js-muted)]">
               <span className="inline-block h-px w-8 bg-[var(--js-accent)]" aria-hidden="true" />
-              INDIA · CIVIC INTELLIGENCE
+              JANSETU · NATIONAL CIVIC INTELLIGENCE
             </p>
-            <h1 className="mt-4 font-serif text-[clamp(2.2rem,4.5vw,3.8rem)] font-semibold uppercase leading-[1.04] tracking-tight">
+            <h1 className="mt-4 font-serif text-[clamp(2.25rem,5.5vw,4.75rem)] font-semibold uppercase leading-[1.02] tracking-tight">
               From citizen signals to development priorities.
             </h1>
-            <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[var(--js-muted)]">
-              JanSetu combines citizen signals, infrastructure context, demographics and
-              investment data to surface emerging development needs.
+            <p className="mt-4 max-w-2xl text-[clamp(1rem,1.4vw,1.15rem)] leading-relaxed text-[var(--js-muted)]">
+              Every signal is transformed into structured civic intelligence
+              through AI-assisted understanding and deterministic analysis.
             </p>
           </div>
           <Reveal delay={100} className="lg:justify-self-end lg:w-full lg:max-w-sm">
@@ -376,17 +376,20 @@ export default function DashboardPage() {
         </div>
 
         {/* ============ KPI COMMAND BAR ============ */}
-        <Reveal className="mt-8">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 rounded-2xl border border-[var(--border)] bg-[var(--js-surface)] px-6 py-7 sm:px-8 lg:grid-cols-4">
+        <Reveal className="mt-10">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-7 border-y border-[var(--border)] py-7 lg:grid-cols-4">
             {[
               { l: "Citizen signals", v: summary ? <CountUp value={summary.citizen_signals} format={fmtInt} /> : "—" },
               { l: "Active hotspots", v: summary ? <CountUp value={summary.active_hotspots} format={fmtInt} /> : "—" },
               { l: "High-priority areas", v: summary ? <CountUp value={summary.high_priority_areas} format={fmtInt} /> : "—" },
               { l: "Population affected", v: summary ? <CountUp value={summary.population_affected} format={fmtInt} /> : "—" },
-            ].map((m, i) => (
-              <div key={m.l} className={i > 0 ? "lg:border-l lg:border-[var(--border)] lg:pl-8" : undefined}>
-                <dt className="text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--js-muted)]">{m.l}</dt>
-                <dd className="mt-2 font-serif text-[clamp(2rem,3.2vw,2.9rem)] font-semibold leading-none tracking-tight tabular-nums">{m.v}</dd>
+            ].map((m) => (
+              <div key={m.l} className="min-w-0">
+                <dt className="flex items-center gap-1.5 break-words text-[11px] font-bold uppercase tracking-[0.16em] text-[var(--js-muted)]">
+                  <span aria-hidden="true" className="inline-block h-1 w-1 shrink-0 rounded-full bg-[var(--js-accent)]" />
+                  {m.l}
+                </dt>
+                <dd className="mt-2 break-words font-serif text-[clamp(1.6rem,3.2vw,2.9rem)] font-semibold leading-none tracking-tight tabular-nums">{m.v}</dd>
                 <dd className="mt-2 text-xs text-[var(--js-faint)]">Current demonstration dataset</dd>
               </div>
             ))}
