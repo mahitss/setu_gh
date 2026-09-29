@@ -2,21 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Map from "@/components/Map";
+import { useRouter } from "next/navigation";
+import {
+  Activity,
+  ArrowRight,
+  ArrowUpRight,
+  Brain,
+  MapPin,
+  Mic,
+  Minus,
+  Radio,
+  Scale,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { apiGet, fmtInt, fmtInr, hotspotHref, title, trendLabel } from "@/lib/api";
-import type { Hotspot, PulseItem, RecommendationOut, Summary } from "@/lib/api";
+import type { Hotspot, PulseItem, Summary } from "@/lib/api";
 
 const LAT_MIN = 8, LAT_MAX = 37, LON_MIN = 68, LON_MAX = 97;
+const AMBER = "#F5B400";
+const INDIGO = "#7C7CFF";
 
-const PIPELINE: [string, string][] = [
-  ["Citizen voice", "People describe what their community needs."],
-  ["AI understanding", "Gemini converts voice and text into structured civic signals."],
-  ["Civic signal", "A validated, located record of one community concern."],
-  ["CivicPulse", "Timestamps reveal which needs are rising."],
-  ["Hotspot", "Demand concentrates in specific districts."],
-  ["Evidence", "Gaps, people affected and investment, side by side."],
-  ["Action", "Policymakers explore recommendations and scenarios."],
-];
+/* ------------------------------------------------------------------ */
+/* Small utilities                                                     */
+/* ------------------------------------------------------------------ */
+
+function fmtLakh(n: number): string {
+  if (n >= 1e7) return `${(n / 1e7).toFixed(2)} Cr people`;
+  if (n >= 1e5) return `${(n / 1e5).toFixed(2)} lakh`;
+  return fmtInt(n);
+}
 
 function CountUp({ value, format }: { value: number; format: (n: number) => string }) {
   const [display, setDisplay] = useState(0);
@@ -30,11 +45,16 @@ function CountUp({ value, format }: { value: number; format: (n: number) => stri
       done.current = true;
       io.disconnect();
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const dur = reduced ? 0 : 900;
+      if (reduced) {
+        setDisplay(value);
+        return;
+      }
+      const dur = 1100;
       const start = performance.now();
       const tick = (t: number) => {
-        const p = dur === 0 ? 1 : Math.min(1, (t - start) / dur);
-        setDisplay(Math.round(value * p));
+        const p = Math.min(1, (t - start) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        setDisplay(Math.round(value * eased));
         if (p < 1) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
@@ -45,54 +65,369 @@ function CountUp({ value, format }: { value: number; format: (n: number) => stri
   return <span ref={ref}>{format(display)}</span>;
 }
 
-type SimPreview = {
-  scenario: { intervention: string; budget_cr: number };
-  baseline: { population_affected: number; coverage_index: number; gap_index: number };
-  estimate: { population_reached: number; coverage_improvement: number; gap_reduction: number };
-  assumptions: string[];
-};
-
-function HeroMap({ hotspots }: { hotspots: Hotspot[] }) {
-  const pts = hotspots
-    .filter((h) => h.latitude != null && h.longitude != null)
-    .sort((a, b) => b.signals - a.signals)
-    .slice(0, 14);
-  const max = Math.max(...pts.map((p) => p.signals), 1);
-  const X = (lon: number) => ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * 100;
-  const Y = (lat: number) => (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * 100;
+function Reveal({ children, className, delay }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0].isIntersecting) return;
+        el.classList.add("is-visible");
+        io.disconnect();
+      },
+      { threshold: 0.12 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
   return (
-    <svg viewBox="0 0 100 62" className="h-auto w-full" role="img" aria-label="Stylized civic signal map">
-      {Array.from({ length: 9 }).map((_, i) => (
-        <line key={`v${i}`} x1={(i + 1) * 10} y1="0" x2={(i + 1) * 10} y2="62" stroke="#3f3f46" strokeWidth="0.15" />
-      ))}
-      {Array.from({ length: 5 }).map((_, i) => (
-        <line key={`h${i}`} x1="0" y1={(i + 1) * 10} x2="100" y2={(i + 1) * 10} stroke="#3f3f46" strokeWidth="0.15" />
-      ))}
-      {(() => {
-        const top = pts.slice(0, 6);
-        return top.slice(1).map((p, i) => (
-          <line key={`c${p.id}`} x1={X(top[i].longitude!)} y1={Y(top[i].latitude!) * 0.62}
-            x2={X(p.longitude!)} y2={Y(p.latitude!) * 0.62}
-            stroke="#635BFF" strokeWidth="0.3" opacity="0.5" />
-        ));
-      })()}
-      {pts.map((p, i) => (
-        <circle key={p.id} cx={X(p.longitude!)} cy={Y(p.latitude!) * 0.62} r={1 + (p.signals / max) * 2.4}
-          fill="#fbbf24" className="signal-dot" style={{ animationDelay: `${(i % 7) * 0.4}s` }}>
-          <title>{`${p.district} — ${p.category}: ${p.signals} signals`}</title>
-        </circle>
-      ))}
-    </svg>
+    <div ref={ref} className={`reveal ${className ?? ""}`} style={delay ? { transitionDelay: `${delay}ms` } : undefined}>
+      {children}
+    </div>
   );
 }
+
+const PARTICLES = [
+  { left: "6%", top: "18%", size: 3, delay: "0s", dur: "7s" },
+  { left: "14%", top: "66%", size: 2, delay: "1.2s", dur: "6s" },
+  { left: "26%", top: "30%", size: 2, delay: "0.6s", dur: "8s" },
+  { left: "41%", top: "12%", size: 3, delay: "2s", dur: "7s" },
+  { left: "55%", top: "58%", size: 2, delay: "0.3s", dur: "6.5s" },
+  { left: "63%", top: "24%", size: 2, delay: "1.7s", dur: "7.5s" },
+  { left: "74%", top: "70%", size: 3, delay: "0.9s", dur: "6s" },
+  { left: "85%", top: "36%", size: 2, delay: "2.4s", dur: "8s" },
+  { left: "92%", top: "60%", size: 2, delay: "1.5s", dur: "7s" },
+  { left: "33%", top: "82%", size: 2, delay: "2.8s", dur: "6.5s" },
+];
+
+/* ------------------------------------------------------------------ */
+/* Hero: Civic Intelligence Network                                    */
+/* ------------------------------------------------------------------ */
+
+function NetworkVisual({
+  hotspots,
+  signals,
+  states,
+  districts,
+}: {
+  hotspots: Hotspot[];
+  signals: number | null;
+  states: number;
+  districts: number;
+}) {
+  const W = 560, H = 430, PAD = 56;
+  const pts = [...hotspots]
+    .filter((h) => h.latitude != null && h.longitude != null)
+    .sort((a, b) => b.signals - a.signals)
+    .slice(0, 10);
+  const max = Math.max(...pts.map((p) => p.signals), 1);
+  const X = (lon: number) => PAD + ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * (W - PAD * 2);
+  const Y = (lat: number) => 34 + (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * (H - 120);
+  const chain = pts.slice(0, 6);
+  const ringed = new Set(pts.slice(0, 3).map((p) => p.id));
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#111216]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_55%_at_50%_38%,rgba(124,124,255,0.10),transparent_70%)]" aria-hidden="true" />
+      <div className="flex items-center justify-between border-b border-white/[0.07] px-5 py-3">
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-zinc-400">CIVIC INTELLIGENCE NETWORK</p>
+        <p className="flex items-center gap-1.5 text-[11px] tracking-wide text-zinc-500">
+          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" aria-hidden="true" />
+          LIVE SIGNAL FLOW
+        </p>
+      </div>
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Civic intelligence network: citizen signals flowing into demand hotspots">
+          <defs>
+            <pattern id="js-grid" width="28" height="28" patternUnits="userSpaceOnUse">
+              <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#ffffff" strokeOpacity="0.05" strokeWidth="1" />
+            </pattern>
+            <radialGradient id="js-glow" cx="50%" cy="42%" r="55%">
+              <stop offset="0%" stopColor={AMBER} stopOpacity="0.10" />
+              <stop offset="100%" stopColor={AMBER} stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <rect width={W} height={H} fill="url(#js-grid)" />
+          <rect width={W} height={H} fill="url(#js-glow)" />
+          {chain.slice(1).map((p, i) => (
+            <line
+              key={`flow-${p.id}`}
+              x1={X(chain[i].longitude!)} y1={Y(chain[i].latitude!)}
+              x2={X(p.longitude!)} y2={Y(p.latitude!)}
+              stroke={INDIGO} strokeWidth="1.4" opacity="0.55" className="js-flow-line"
+            />
+          ))}
+          {pts.map((p, i) => {
+            const cx = X(p.longitude!);
+            const cy = Y(p.latitude!);
+            const r = 4 + (p.signals / max) * 9;
+            const core = i === 0 ? AMBER : i < 3 ? "#FFD166" : INDIGO;
+            return (
+              <g key={p.id}>
+                {ringed.has(p.id) && (
+                  <circle cx={cx} cy={cy} r={r + 7} fill="none" stroke={core} strokeWidth="1" className="js-node-ring" style={{ animationDelay: `${i * 0.9}s` }} />
+                )}
+                <circle cx={cx} cy={cy} r={r} fill={core} opacity={i === 0 ? 0.95 : 0.75}>
+                  <title>{`${p.district} — ${title(p.category)}: ${fmtInt(p.signals)} signals`}</title>
+                </circle>
+                {i < 3 && (
+                  <text x={cx + r + 6} y={cy + 3} fill="#d4d4d8" fontSize="10.5" fontWeight="600">
+                    {p.district} · {fmtInt(p.signals)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
+          <text x={18} y={30} fill="#71717a" fontSize="10" letterSpacing="2">SIGNALS {signals != null ? fmtInt(signals) : "—"}</text>
+          <text x={W - 18} y={30} fill="#71717a" fontSize="10" letterSpacing="2" textAnchor="end">HOTSPOTS {hotspots.length || "—"}</text>
+          <text x={18} y={H - 16} fill="#71717a" fontSize="10" letterSpacing="2">STATES {states || "—"}</text>
+          <text x={W - 18} y={H - 16} fill="#71717a" fontSize="10" letterSpacing="2" textAnchor="end">DISTRICTS {districts || "—"}</text>
+        </svg>
+        {PARTICLES.map((pt, i) => (
+          <span
+            key={i}
+            aria-hidden="true"
+            className="js-float absolute rounded-full bg-white/25"
+            style={{ left: pt.left, top: pt.top, width: pt.size, height: pt.size, animationDelay: pt.delay, animationDuration: pt.dur }}
+          />
+        ))}
+      </div>
+      <div className="flex items-center gap-1.5 overflow-x-auto border-t border-white/[0.07] px-5 py-3 text-[11px] tracking-wide text-zinc-500">
+        {["Citizen signal", "AI understanding", "Civic signal", "CivicPulse", "Hotspot"].map((s, i, a) => (
+          <span key={s} className="flex shrink-0 items-center gap-1.5">
+            <span className={i === 0 ? "font-semibold text-amber-300" : i === a.length - 1 ? "font-semibold text-zinc-200" : undefined}>{s}</span>
+            {i < a.length - 1 && <span className="text-zinc-700">→</span>}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Pipeline                                                            */
+/* ------------------------------------------------------------------ */
+
+const STAGES = [
+  { icon: Mic, name: "Citizen voice", text: "People describe what their community needs, in their own language." },
+  { icon: Brain, name: "AI understanding", text: "Gemini converts voice and text into structured civic signals." },
+  { icon: Radio, name: "Civic signal", text: "A validated, located record of one community concern." },
+  { icon: Activity, name: "CivicPulse", text: "Timestamps reveal which needs are rising, and how fast." },
+  { icon: MapPin, name: "Hotspot", text: "Demand concentrates into districts that need attention first." },
+  { icon: Scale, name: "Evidence", text: "Gaps, people affected and investment — weighed side by side." },
+  { icon: ArrowUpRight, name: "Action", text: "Policymakers explore recommendations and funding scenarios." },
+];
+
+function Pipeline() {
+  return (
+    <div>
+      {/* Desktop: horizontal architecture rail */}
+      <ol className="relative hidden lg:block">
+        <div className="absolute left-0 right-0 top-[26px] h-px bg-zinc-200" aria-hidden="true" />
+        <div className="js-pipeline-progress absolute left-0 right-0 top-[26px] h-px bg-gradient-to-r from-[#F5B400] via-[#F5B400] to-[#7C7CFF]" aria-hidden="true" />
+        <div className="grid grid-cols-7 gap-4">
+          {STAGES.map((s, i) => (
+            <li key={s.name} className="group relative pt-0">
+              <span className="relative z-10 flex h-[52px] w-[52px] items-center justify-center rounded-full border border-zinc-200 bg-white transition-all duration-300 group-hover:border-[#F5B400] group-hover:shadow-[0_10px_30px_rgba(245,180,0,0.25)]" aria-hidden="true">
+                <s.icon className="h-5 w-5 text-zinc-700 transition-colors duration-300 group-hover:text-[#B87E00]" strokeWidth={1.8} />
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#0A0A0B] font-mono text-[10px] font-semibold text-white">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </span>
+              <p className="mt-4 text-[11px] font-semibold tracking-[0.16em] text-zinc-400">0{i + 1}</p>
+              <p className="mt-1 text-[15px] font-semibold text-zinc-900">{s.name}</p>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-500">{s.text}</p>
+            </li>
+          ))}
+        </div>
+      </ol>
+      {/* Mobile / tablet: vertical timeline */}
+      <ol className="relative space-y-7 border-l border-zinc-200 pl-0 lg:hidden">
+        {STAGES.map((s, i) => (
+          <li key={s.name} className="relative pl-14">
+            <span className="absolute left-0 top-0 -translate-x-1/2" aria-hidden="true">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white">
+                <s.icon className="h-5 w-5 text-zinc-700" strokeWidth={1.8} />
+              </span>
+            </span>
+            <span className="absolute bottom-[-28px] left-0 top-11 w-px -translate-x-1/2 bg-gradient-to-b from-[#F5B400]/60 to-transparent" aria-hidden={i === STAGES.length - 1} style={i === STAGES.length - 1 ? { display: "none" } : undefined} />
+            <p className="text-[11px] font-semibold tracking-[0.16em] text-zinc-400">0{i + 1}</p>
+            <p className="mt-0.5 text-base font-semibold text-zinc-900">{s.name}</p>
+            <p className="mt-1 text-sm leading-relaxed text-zinc-500">{s.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Living intelligence map (landing-specific, hover detail panel)      */
+/* ------------------------------------------------------------------ */
+
+function priorityColor(level: string): string {
+  switch (level) {
+    case "critical": return "#DC2626";
+    case "high": return "#F5B400";
+    case "medium": return "#7C7CFF";
+    default: return "#A1A1AA";
+  }
+}
+
+function IntelMap({ hotspots }: { hotspots: Hotspot[] }) {
+  const router = useRouter();
+  const [hoverId, setHoverId] = useState<string | null>(null);
+  const W = 600, H = 420, PAD = 30;
+  const pts = [...hotspots]
+    .filter((h) => h.latitude != null && h.longitude != null)
+    .sort((a, b) => b.signals - a.signals)
+    .slice(0, 40);
+  const max = Math.max(...pts.map((p) => p.signals), 1);
+  const X = (lon: number) => PAD + ((lon - LON_MIN) / (LON_MAX - LON_MIN)) * (W - PAD * 2);
+  const Y = (lat: number) => 20 + (1 - (lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * (H - 60);
+  const hovered = pts.find((p) => p.id === hoverId) ?? null;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-[0_24px_70px_rgba(10,10,11,0.10)]">
+      <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-3">
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-zinc-500">DEMAND GEOGRAPHY · 24 DISTRICTS</p>
+        <p className="hidden text-[11px] tracking-wide text-zinc-400 sm:block">Hover a node for detail</p>
+      </div>
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Living intelligence map of civic demand across India">
+          <defs>
+            <pattern id="js-light-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+              <path d="M 26 0 L 0 0 0 26" fill="none" stroke="#101318" strokeOpacity="0.05" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width={W} height={H} fill="url(#js-light-grid)" />
+          {pts.slice(0, 12).map((p, i, arr) =>
+            i === 0 ? null : (
+              <line
+                key={`link-${p.id}`}
+                x1={X(arr[i - 1].longitude!)} y1={Y(arr[i - 1].latitude!)}
+                x2={X(p.longitude!)} y2={Y(p.latitude!)}
+                stroke="#7C7CFF" strokeWidth="1" opacity="0.25" className="js-flow-line"
+              />
+            )
+          )}
+          {pts.map((p, i) => {
+            const cx = X(p.longitude!);
+            const cy = Y(p.latitude!);
+            const r = 4 + (p.signals / max) * 11;
+            const active = hoverId === p.id;
+            return (
+              <g
+                key={p.id}
+                onMouseEnter={() => setHoverId(p.id)}
+                onMouseLeave={() => setHoverId((id) => (id === p.id ? null : id))}
+                onClick={() => router.push(hotspotHref(p))}
+                className="cursor-pointer"
+              >
+                <circle cx={cx} cy={cy} r={r + 10} fill="transparent" />
+                {i < 5 && <circle cx={cx} cy={cy} r={r + 6} fill="none" stroke={priorityColor(p.priority_level)} strokeWidth="1" opacity="0.5" className="js-node-ring" style={{ animationDelay: `${i * 0.7}s` }} />}
+                <circle
+                  cx={cx} cy={cy} r={active ? r + 2 : r}
+                  fill={priorityColor(p.priority_level)}
+                  opacity={active ? 1 : 0.82}
+                  stroke="#fff" strokeWidth={active ? 2.5 : 1.5}
+                  style={{ transition: "all 200ms ease" }}
+                >
+                  <title>{`${p.district} — ${title(p.category)}: ${fmtInt(p.signals)} signals`}</title>
+                </circle>
+              </g>
+            );
+          })}
+        </svg>
+        {hovered && hovered.latitude != null && hovered.longitude != null && (
+          <div
+            className="pointer-events-none absolute z-10 w-52 rounded-xl border border-zinc-200 bg-[#0A0A0B] p-3.5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+            style={{
+              left: `clamp(4px, ${(X(hovered.longitude) / W) * 100}%, calc(100% - 216px))`,
+              top: `clamp(4px, ${(Y(hovered.latitude) / H) * 100}%, calc(100% - 150px))`,
+            }}
+            role="status"
+          >
+            <p className="text-sm font-semibold">{hovered.district}</p>
+            <p className="text-xs text-zinc-400">{hovered.state} · {title(hovered.category)}</p>
+            <p className="mt-2 font-serif text-2xl font-semibold">{fmtInt(hovered.signals)} <span className="text-xs font-sans font-normal text-zinc-400">citizen signals</span></p>
+            <p className="mt-1 text-xs">
+              <span className={(hovered.trend_pct ?? 0) >= 0 ? "font-semibold text-red-300" : "font-semibold text-emerald-300"}>
+                {trendLabel(hovered.trend_pct)} demand
+              </span>
+              <span className="ml-2 uppercase tracking-wider text-zinc-400">{hovered.priority_level} priority</span>
+            </p>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-zinc-100 px-5 py-3 text-[11px] tracking-wide text-zinc-500">
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#DC2626]" /> Critical</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#F5B400]" /> High</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#7C7CFF]" /> Medium</span>
+        <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#A1A1AA]" /> Low</span>
+        <Link href="/hotspots" className="ml-auto font-semibold text-zinc-800 hover:underline">All hotspots →</Link>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* CivicPulse demand-momentum panel                                    */
+/* ------------------------------------------------------------------ */
+
+function PulsePanel({ pulse }: { pulse: PulseItem[] }) {
+  const rows = [...pulse]
+    .sort((a, b) => (b.trend_percent ?? -Infinity) - (a.trend_percent ?? -Infinity))
+    .slice(0, 4);
+  const maxCount = Math.max(...rows.map((r) => Math.max(r.current_count, r.previous_count)), 1);
+  if (rows.length === 0) {
+    return <p className="text-sm text-zinc-500">No pulse data right now.</p>;
+  }
+  return (
+    <ol className="mt-6 divide-y divide-zinc-200 border-y border-zinc-200">
+      {rows.map((p) => {
+        const up = (p.trend_percent ?? 0) >= 0;
+        const TrendIcon = up ? TrendingUp : p.trend_percent == null ? Minus : TrendingDown;
+        return (
+          <li key={p.category} className="group py-5 transition-colors duration-200 first:pt-6 last:pb-6 hover:bg-white/60">
+            <div className="flex items-baseline justify-between gap-4">
+              <p className="text-[15px] font-semibold text-zinc-900">{title(p.category)}</p>
+              <p className={`flex items-center gap-1.5 font-serif text-[2rem] font-semibold leading-none tracking-tight ${up ? "text-[#B42318]" : "text-emerald-700"}`}>
+                <TrendIcon className="h-5 w-5" strokeWidth={2.2} aria-hidden="true" />
+                {trendLabel(p.trend_percent)}
+              </p>
+            </div>
+            <p className="mt-1 text-[13px] text-zinc-500">
+              {fmtInt(p.current_count)} citizen signals · 30-day change · demand is {p.status.replace(/_/g, " ")}
+            </p>
+            <div className="mt-3 space-y-1.5" aria-hidden="true">
+              <div className="flex items-center gap-2">
+                <span className="w-14 text-[11px] text-zinc-400">Prior</span>
+                <span className="h-1.5 rounded-full bg-zinc-300 transition-all duration-500" style={{ width: `${Math.max(4, (p.previous_count / maxCount) * 100)}%` }} />
+                <span className="text-[11px] text-zinc-400">{fmtInt(p.previous_count)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-14 text-[11px] text-zinc-400">Now</span>
+                <span className={`h-1.5 rounded-full transition-all duration-500 ${up ? "bg-[#F5B400]" : "bg-emerald-600"}`} style={{ width: `${Math.max(4, (p.current_count / maxCount) * 100)}%` }} />
+                <span className="text-[11px] font-medium text-zinc-600">{fmtInt(p.current_count)}</span>
+              </div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Page                                                                */
+/* ------------------------------------------------------------------ */
 
 export default function Home() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [pulse, setPulse] = useState<PulseItem[]>([]);
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
-  const [sim, setSim] = useState<SimPreview | null>(null);
-  const [rec, setRec] = useState<RecommendationOut | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadMsg, setLoadMsg] = useState("Connecting citizen signals…");
@@ -121,23 +456,6 @@ export default function Home() {
         setSummary(s);
         setPulse(p.pulse);
         setHotspots(h.hotspots);
-        const top = h.hotspots[0];
-        if (top) {
-          apiGet<RecommendationOut>(
-            `/api/v1/hotspots/${encodeURIComponent(top.id)}/recommendation`, ctrl.signal
-          )
-            .then(setRec)
-            .catch(() => setRec(null));
-          fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/api/v1/simulate`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: top.state, district: top.district, category: top.category, budget: 100 * 1e7 }),
-            signal: ctrl.signal,
-          })
-            .then((r) => (r.ok ? r.json() : null))
-            .then((d) => setSim(d))
-            .catch(() => setSim(null));
-        }
       })
       .catch((e) => {
         if (e instanceof DOMException && e.name === "AbortError") return;
@@ -149,280 +467,273 @@ export default function Home() {
     return () => ctrl.abort();
   }, [reloadKey]);
 
-  const rising = pulse.filter((p) => p.status === "rising").slice(0, 4);
   const top = hotspots[0] ?? null;
   const states = new Set(hotspots.map((h) => h.state)).size;
   const districts = new Set(hotspots.map((h) => `${h.state}|${h.district}`)).size;
 
+  const trail = top
+    ? [
+        { value: fmtInt(top.signals), label: "Citizen signals", note: `${title(top.category)} concerns reported in ${top.district}, ${top.state}.` },
+        { value: trendLabel(top.trend_pct), label: "CivicPulse", note: "30-day demand shift against the previous window." },
+        { value: top.gap_index?.toFixed(2) ?? "—", label: "Infrastructure gap", note: "Facility coverage shortfall on a 0–1 index." },
+        { value: fmtLakh(top.population), label: "Population context", note: "People living inside this demand cluster." },
+        { value: fmtInr(top.investment_inr), label: "Existing investment", note: "Public money already deployed — the gap persists." },
+      ]
+    : [];
+
   return (
     <main className="flex-1">
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-[#0A0C10] text-white">
+      {/* ================= HERO ================= */}
+      <section className="relative overflow-hidden bg-[#0A0A0B] text-white">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-[#F5A800] opacity-[0.07] blur-3xl" />
-          <div className="absolute right-0 top-1/3 h-[28rem] w-[28rem] rounded-full bg-[#635BFF] opacity-[0.10] blur-3xl" />
+          <div className="absolute -top-40 left-[8%] h-[30rem] w-[30rem] rounded-full bg-[#F5B400] opacity-[0.06] blur-3xl" />
+          <div className="absolute -right-24 top-1/4 h-[34rem] w-[34rem] rounded-full bg-[#4F46E5] opacity-[0.12] blur-3xl" />
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_35%,black,transparent)]" />
         </div>
-        <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-8 px-5 py-16 md:px-8 min-[1440px]:px-10 lg:grid-cols-2 lg:min-h-[580px]">
+        <div className="relative mx-auto grid max-w-[1360px] grid-cols-1 items-center gap-10 px-5 pb-16 pt-14 md:px-8 min-[1440px]:px-10 lg:grid-cols-[1.02fr_1fr] lg:gap-14 lg:pb-20 lg:pt-16 lg:min-h-[720px]">
           <div className="animate-[fade-up_.5s_ease-out]">
-            <p className="text-xs font-semibold tracking-[0.2em] text-amber-400">JANSETU · AI CIVIC INTELLIGENCE FOR INDIA</p>
-            <h1 className="mt-3 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">
-              Turn <span className="text-amber-400">citizen voices</span> into development decisions.
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+              <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
+              JANSETU · AI CIVIC INTELLIGENCE FOR INDIA
+            </p>
+            <h1 className="mt-5 font-serif text-[clamp(2.75rem,6vw,5.25rem)] font-semibold uppercase leading-[1.02] tracking-tight">
+              Turn <span className="text-[#F5B400]">citizen signals</span> into development decisions.
             </h1>
-            <p className="mt-4 max-w-xl text-zinc-300">
-              JanSetu connects citizen needs, infrastructure gaps, demographic context and
-              public investment to surface evidence-backed development priorities.
+            <p className="mt-6 max-w-xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-400">
+              JanSetu transforms multilingual citizen experiences into structured civic
+              intelligence — connecting demand, infrastructure gaps, demographic context
+              and public investment.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/citizen" className="rounded-md bg-white px-5 py-2.5 text-sm font-medium text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-zinc-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
-                Report a Community Need →
+            <div className="mt-9 flex flex-wrap items-center gap-4">
+              <Link
+                href="/citizen"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F5B400] hover:shadow-[0_12px_40px_rgba(245,180,0,0.35)]"
+              >
+                Report a Community Need
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
               </Link>
-              <Link href="/dashboard" className="rounded-md border border-zinc-700 px-5 py-2.5 text-sm transition-colors duration-200 hover:border-zinc-400 hover:bg-zinc-900">
+              <Link
+                href="/dashboard"
+                className="group inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 py-3.5 text-[15px] font-medium text-zinc-100 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/[0.08]"
+              >
                 Explore Civic Intelligence
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
               </Link>
             </div>
-          </div>
-          <div className="relative rounded-xl border border-white/10 bg-[#11141A] p-4">
-            <div className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_70%_20%,rgba(99,91,255,0.12),transparent_60%)]" aria-hidden="true" />
-            <HeroMap hotspots={hotspots} />
-            {summary && !loading && (
-              <>
-                <span className="absolute left-6 top-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
-                  {fmtInt(summary.citizen_signals)} signals
-                </span>
-                <span className="absolute right-6 top-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
-                  {hotspots.length} active hotspots
-                </span>
-                <span className="absolute bottom-6 left-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
-                  {rising.length} rising categories
-                </span>
-                <span className="absolute bottom-6 right-6 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 text-[11px] text-zinc-200 backdrop-blur">
-                  90-day intelligence
-                </span>
-              </>
-            )}
-            {!loading && hotspots.length === 0 && (
-              <p className="mt-2 text-xs text-zinc-400">Civic intelligence will appear when the data service is connected.</p>
-            )}
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
-              <div><dt className="tracking-widest text-zinc-500">CITIZEN SIGNALS</dt><dd className="font-semibold text-zinc-200">{summary ? fmtInt(summary.citizen_signals) : "—"}</dd></div>
-              <div><dt className="tracking-widest text-zinc-500">AI UNDERSTANDING</dt><dd className="font-semibold text-zinc-200">{pulse.length ? `${pulse.length} categories` : "—"}</dd></div>
-              <div><dt className="tracking-widest text-zinc-500">CIVICPULSE</dt><dd className="font-semibold text-zinc-200">{rising.length ? `${rising.length} rising` : "—"}</dd></div>
-              <div><dt className="tracking-widest text-zinc-500">HOTSPOTS</dt><dd className="font-semibold text-zinc-200">{hotspots.length ? `${hotspots.length} tracked` : "—"}</dd></div>
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      {error && (
-        <div className="mx-auto max-w-[1280px] px-6 md:px-10 pt-6">
-          <p role="alert" className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>
-          <button onClick={retry} className="mt-2 rounded-md border px-4 py-1.5 text-sm hover:bg-zinc-50">
-            Retry connection
-          </button>
-        </div>
-      )}
-      {loading && !summary && (
-        <div className="mx-auto max-w-[1280px] px-6 md:px-10 pt-6">
-          <p className="text-sm text-zinc-500" role="status">
-            <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#F5A800]" aria-hidden="true" />
-            {loadMsg}
-          </p>
-        </div>
-      )}
-
-      {/* DATA STRIP */}
-      <section className="border-b">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-4 px-6 py-8 md:px-10 lg:grid-cols-4">
-          <div>
-            <p className="text-3xl font-semibold">
-              {summary ? <><CountUp value={summary.citizen_signals} format={fmtInt} />+</> : "—"}
+            <p className="mt-7 text-xs tracking-wide text-zinc-500">
+              AI interprets human input · Deterministic engines calculate the numbers · Synthetic demonstration data
             </p>
-            <p className="mt-1 text-sm text-zinc-500">Citizen signals analyzed</p>
           </div>
-          <div>
-            <p className="text-3xl font-semibold">{summary ? <CountUp value={states} format={fmtInt} /> : "—"}</p>
-            <p className="mt-1 text-sm text-zinc-500">States</p>
-          </div>
-          <div>
-            <p className="text-3xl font-semibold">{summary ? <CountUp value={districts} format={fmtInt} /> : "—"}</p>
-            <p className="mt-1 text-sm text-zinc-500">Districts</p>
-          </div>
-          <div>
-            <p className="text-3xl font-semibold">90 days</p>
-            <p className="mt-1 text-sm text-zinc-500">Intelligence window</p>
-          </div>
+          <Reveal className="w-full">
+            <NetworkVisual
+              hotspots={hotspots}
+              signals={summary?.citizen_signals ?? null}
+              states={states}
+              districts={districts}
+            />
+          </Reveal>
         </div>
-        <p className="mx-auto max-w-[1280px] px-6 md:px-10 pb-6 text-xs text-zinc-500">Synthetic demonstration dataset. Values load from the demonstration backend.</p>
       </section>
 
-      {/* PIPELINE */}
-      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
-        <h2 className="text-2xl font-semibold">How JanSetu thinks</h2>
-        <ol className="mt-5 flex flex-wrap items-stretch gap-0">
-          {PIPELINE.map(([s, d], i) => (
-            <li key={s} className="group flex items-center">
-              <span className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm transition-all duration-200 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[11px] font-semibold transition-colors duration-200 group-hover:bg-[#F5A800] group-hover:text-white">
-                  {i + 1}
-                </span>
-                <span>
-                  <span className="block font-medium">{s}</span>
-                  <span className="mt-0.5 hidden max-w-44 text-xs text-zinc-500 group-hover:block">{d}</span>
-                </span>
-              </span>
-              {i < PIPELINE.length - 1 && <span className="mx-1 h-px w-4 bg-zinc-300" aria-hidden="true" />}
-            </li>
-          ))}
-        </ol>
-        <p className="mt-3 text-sm text-zinc-600">AI interprets human input. Deterministic engines calculate the numbers.</p>
-      </section>
-
-      {/* INTELLIGENCE PREVIEW */}
-      <section className="border-y bg-[#F1F3F5]">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-8 px-6 py-20 md:px-10 lg:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-semibold">National civic intelligence</h2>
-            <div className="mt-4">
-              <Map hotspots={hotspots.slice(0, 50)} selectedId={selectedId} onSelect={setSelectedId} />
+      {/* ================= NATIONAL SCALE STRIP ================= */}
+      <section className="border-y border-white/10 bg-[#0A0A0B] text-white">
+        <div className="mx-auto max-w-[1360px] px-5 py-10 md:px-8 min-[1440px]:px-10 lg:py-12">
+          {error && (
+            <div className="mb-8">
+              <p role="alert" className="border-l-2 border-red-400 bg-red-950/40 p-3 text-sm text-red-200">{error}</p>
+              <button onClick={retry} className="mt-3 rounded-full border border-white/20 px-5 py-2 text-sm transition-colors duration-200 hover:bg-white/10">
+                Retry connection
+              </button>
             </div>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">What&apos;s changing?</h3>
-            <p className="text-sm text-zinc-500">Rising demand, from CivicPulse.</p>
-            <ul className="mt-3 space-y-2">
-              {rising.map((p) => (
-                <li key={p.category} className="flex items-center justify-between rounded-md border bg-white p-3 text-sm">
-                  <span className="font-medium">{title(p.category)}</span>
-                  <span className="font-semibold text-red-700">↑ {p.trend_percent}%</span>
-                </li>
-              ))}
-              {rising.length === 0 && <li className="text-sm text-zinc-500">No rising categories right now.</li>}
-            </ul>
-            <Link href="/dashboard" className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
-              Open Intelligence Dashboard →
-            </Link>
+          )}
+          {loading && !summary && (
+            <p className="mb-8 text-sm text-zinc-400" role="status">
+              <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-[#F5B400]" aria-hidden="true" />
+              {loadMsg}
+            </p>
+          )}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
+            {[
+              { v: summary ? <><CountUp value={summary.citizen_signals} format={fmtInt} />+</> : "—", l: "Citizen signals analyzed" },
+              { v: summary ? <CountUp value={states} format={fmtInt} /> : "—", l: "States under watch" },
+              { v: summary ? <CountUp value={districts} format={fmtInt} /> : "—", l: "Districts mapped" },
+              { v: "90 days", l: "Intelligence window" },
+            ].map((m, i) => (
+              <div key={m.l} className={i > 0 ? "lg:border-l lg:border-white/10 lg:pl-8" : undefined}>
+                <dd className="font-serif text-[clamp(2.4rem,4vw,3.6rem)] font-semibold leading-none tracking-tight">
+                  {m.v}
+                </dd>
+                <dt className="mt-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-500">{m.l}</dt>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      {/* ================= HOW JANSETU THINKS ================= */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
+          <Reveal>
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+              <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
+              SYSTEM ARCHITECTURE
+            </p>
+            <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950">
+              How JanSetu thinks
+            </h2>
+            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500">
+              From lived experience to evidence-backed action.
+            </p>
+          </Reveal>
+          <Reveal className="mt-12" delay={120}>
+            <Pipeline />
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ================= NATIONAL CIVIC INTELLIGENCE ================= */}
+      <section className="border-y border-[#EDE6D8] bg-[#FAF6EF]">
+        <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
+          <Reveal>
+            <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+              <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
+              LIVE FROM THE BACKEND
+            </p>
+            <h2 className="mt-4 max-w-3xl font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold tracking-tight text-zinc-950">
+              National civic intelligence
+            </h2>
+            <p className="mt-3 max-w-2xl text-[clamp(1rem,1.4vw,1.2rem)] leading-relaxed text-zinc-500">
+              Where citizen demand is concentrating across India — right now.
+            </p>
+          </Reveal>
+          <div className="mt-12 grid grid-cols-1 gap-10 lg:grid-cols-[1.25fr_1fr] lg:gap-14">
+            <Reveal delay={80}>
+              <IntelMap hotspots={hotspots} />
+            </Reveal>
+            <Reveal delay={160}>
+              <p className="text-[11px] font-semibold tracking-[0.24em] text-zinc-400">CIVICPULSE · DEMAND MOMENTUM</p>
+              <h3 className="mt-3 font-serif text-3xl font-semibold tracking-tight text-zinc-950">What&apos;s changing?</h3>
+              <PulsePanel pulse={pulse} />
+              <Link
+                href="/dashboard"
+                className="group mt-7 inline-flex items-center gap-2 rounded-full bg-[#0A0A0B] px-6 py-3 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_rgba(10,10,11,0.3)]"
+              >
+                Open Intelligence Dashboard
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+            </Reveal>
           </div>
         </div>
       </section>
 
-      {/* CIVICPULSE CARDS */}
-      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-16">
-        <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">CIVICPULSE</p>
-        <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">Where demand is moving</h2>
-        <p className="mt-1 text-sm text-zinc-500">30-day change vs previous 30 days, from the backend.</p>
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[...pulse].sort((a, b) => (b.trend_percent ?? -Infinity) - (a.trend_percent ?? -Infinity)).slice(0, 4).map((p) => (
-            <div key={p.category} className="rounded-md border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-              <p className="text-sm font-semibold tracking-wide">{title(p.category).toUpperCase()}</p>
-              <p className={`mt-1 text-2xl font-semibold ${(p.trend_percent ?? 0) >= 0 ? "text-red-700" : "text-green-700"}`}>
-                {(p.trend_percent ?? 0) >= 0 ? "↑" : "↓"} {trendLabel(p.trend_percent)}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">{fmtInt(p.current_count)} signals · Demand is {p.status === "rising" ? "rising" : p.status.replace("_", " ")}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* EVIDENCE */}
+      {/* ================= EVIDENCE → ACTION ================= */}
       {top && (
-        <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
-          <h2 className="text-2xl font-semibold">From signal to evidence</h2>
-          <div className="mt-4 rounded-md border p-5">
-            <p className="text-sm font-semibold tracking-widest text-zinc-500">{top.district.toUpperCase()}, {top.state.toUpperCase()}</p>
-            <p className="mt-1 text-xl font-semibold">{title(top.category)}</p>
-            <dl className="mt-3 max-w-xl space-y-2 text-sm">
-              {[
-                ["Citizen signals", fmtInt(top.signals)],
-                ["CivicPulse", trendLabel(top.trend_pct)],
-                ["Infrastructure gap", top.gap_index?.toFixed(2) ?? "—"],
-                ["Population context", fmtInt(top.population)],
-                ["Existing investment", fmtInr(top.investment_inr)],
-              ].map(([k, v], i, a) => (
-                <div key={k}>
-                  <div className="flex items-baseline justify-between rounded-md bg-zinc-50 p-3">
-                    <dt className="text-zinc-500">{k}</dt>
-                    <dd className="font-semibold">{v}</dd>
-                  </div>
-                  {i < a.length - 1 && <p className="py-0.5 pl-3 text-zinc-400">↓</p>}
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1360px] px-5 py-20 md:px-8 min-[1440px]:px-10 lg:py-[104px]">
+            <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-20">
+              <Reveal>
+                <div className="lg:sticky lg:top-28">
+                  <p className="flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.24em] text-zinc-400">
+                    <span className="inline-block h-px w-8 bg-[#F5B400]" aria-hidden="true" />
+                    WHY IT MATTERS
+                  </p>
+                  <h2 className="mt-4 font-serif text-[clamp(2rem,4vw,3.4rem)] font-semibold uppercase leading-[1.05] tracking-tight text-zinc-950">
+                    From signal to evidence to action.
+                  </h2>
+                  <p className="mt-4 max-w-md text-[15px] leading-relaxed text-zinc-500">
+                    One live hotspot — <strong className="font-semibold text-zinc-800">{top.district}, {top.state}</strong> ·{" "}
+                    {title(top.category)} — traced from raw citizen reports to a development
+                    priority. Every figure below is computed by deterministic backend engines.
+                  </p>
+                  <Link
+                    href={hotspotHref(top)}
+                    className="group mt-7 inline-flex items-center gap-2 rounded-full border border-zinc-300 px-6 py-3 text-sm font-medium text-zinc-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-900"
+                  >
+                    Open the hotspot file
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
+                  </Link>
                 </div>
-              ))}
-            </dl>
-            <h3 className="mt-4 text-sm font-semibold">Why this matters</h3>
-            <ul className="mt-1 space-y-1 text-sm text-zinc-700">
-              <li>• {fmtInt(top.signals)} citizens reported {top.category} issues here</li>
-              <li>• Coverage gap of {top.gap_index?.toFixed(2) ?? "—"} leaves {fmtInt(top.population)} people underserved</li>
-              <li>• Existing investment of {fmtInr(top.investment_inr)} has not closed the gap</li>
-            </ul>
-            <Link href={hotspotHref(top)} className="mt-4 inline-block rounded-md border px-4 py-2 text-sm">
-              Explore Hotspot →
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* RECOMMENDATION */}
-      {rec && top && (
-        <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-16">
-          <p className="text-xs font-semibold tracking-[0.2em] text-zinc-500">WHAT JANSETU RECOMMENDS</p>
-          <h2 className="mt-2 font-serif text-3xl font-semibold tracking-tight">
-            {rec.recommendation.intervention}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-600">
-            Evidence-backed recommendation · Evidence: {fmtInt(rec.evidence.citizen_signals)} signals ·{" "}
-            {fmtInt(rec.evidence.population_affected)} affected · confidence {rec.recommendation.confidence.toFixed(2)}
-          </p>
-          <Link href={hotspotHref(top)} className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
-            Open hotspot evidence →
-          </Link>
-        </section>
-      )}
-
-      {/* SIMULATOR */}
-      {sim && top && (
-        <section className="border-y bg-[#F1F3F5]">
-          <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-20">
-            <h2 className="text-2xl font-semibold">What if we invest?</h2>
-            <p className="mt-1 text-sm text-zinc-600">
-              JanSetu doesn&apos;t stop at identifying problems. It lets policymakers explore prototype intervention scenarios.
-            </p>
-            <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-md border bg-white p-4">
-                <p className="font-semibold">Current</p>
-                <p className="mt-1 text-zinc-600">{fmtInt(top.population)} affected · gap {top.gap_index?.toFixed(2) ?? "—"}</p>
-              </div>
-              <div className="rounded-md border bg-white p-4">
-                <p className="font-semibold">Intervention</p>
-                <p className="mt-1 text-zinc-600">{title(sim.scenario.intervention)} @ ₹{sim.scenario.budget_cr} Cr</p>
-              </div>
-              <div className="rounded-md border bg-white p-4">
-                <p className="font-semibold">Scenario estimate</p>
-                <p className="mt-1 text-zinc-600">{fmtInt(sim.estimate.population_reached)} reached · gap −{(sim.estimate.gap_reduction * 100).toFixed(1)}%</p>
-              </div>
+              </Reveal>
+              <ol className="relative space-y-2">
+                {trail.map((t, i) => (
+                  <Reveal key={t.label} delay={i * 60}>
+                    <li className="group relative flex gap-6 pb-8 last:pb-0">
+                      <span className="flex flex-col items-center" aria-hidden="true">
+                        <span className="flex h-3 w-3 rounded-full bg-[#F5B400] ring-4 ring-[#F5B400]/15 transition-all duration-300 group-hover:ring-[#F5B400]/30" />
+                        {i < trail.length && <span className="mt-1 w-px flex-1 bg-gradient-to-b from-[#F5B400]/70 via-zinc-200 to-zinc-200" />}
+                      </span>
+                      <div className="flex-1 border-b border-zinc-100 pb-8 group-last:border-0 group-last:pb-0">
+                        <p className="font-serif text-[clamp(2.2rem,3.5vw,3.2rem)] font-semibold leading-none tracking-tight text-zinc-950">
+                          {t.value}
+                        </p>
+                        <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-400">{t.label}</p>
+                        <p className="mt-1.5 max-w-md text-sm leading-relaxed text-zinc-500">{t.note}</p>
+                      </div>
+                    </li>
+                  </Reveal>
+                ))}
+                <Reveal delay={trail.length * 60}>
+                  <li className="relative flex gap-6">
+                    <span className="flex flex-col items-center" aria-hidden="true">
+                      <span className="flex h-3 w-3 rounded-full bg-[#0A0A0B] ring-4 ring-zinc-900/10" />
+                    </span>
+                    <div className="flex-1 rounded-2xl bg-[#0A0A0B] p-7 text-white">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F5B400]">Outcome</p>
+                      <p className="mt-2 font-serif text-3xl font-semibold tracking-tight">Development priority</p>
+                      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                        <span className="font-semibold uppercase tracking-wider text-white">{top.priority_level}</span>
+                        {" "}· {fmtInt(top.signals)} voices, one evidence file, one decision.
+                      </p>
+                    </div>
+                  </li>
+                </Reveal>
+              </ol>
             </div>
-            <p className="mt-2 text-xs text-zinc-500">Prototype scenario estimate — not a guaranteed outcome.</p>
-            <Link href="/simulate" className="mt-4 inline-block rounded-md bg-black px-4 py-2 text-sm text-white">
-              Open Investment Simulator →
-            </Link>
           </div>
         </section>
       )}
 
-      {/* CITIZEN CTA */}
-      <section className="mx-auto max-w-[1280px] px-6 md:px-10 py-12 text-center">
-        <h2 className="text-2xl font-semibold">Your community already knows what needs attention.</h2>
-        <p className="mt-2 text-zinc-600">JanSetu turns those voices into structured civic intelligence.</p>
-        <Link href="/citizen" className="mt-6 inline-block rounded-md bg-black px-6 py-3 text-sm text-white">
-          Report a Need →
-        </Link>
-      </section>
-
-      {/* TRANSPARENCY */}
-      <section className="border-t">
-        <div className="mx-auto grid max-w-[1280px] grid-cols-2 gap-4 px-6 py-8 md:px-10 text-sm lg:grid-cols-4">
-          <div><p className="font-semibold">AI</p><p className="text-zinc-500">Google Gemini</p></div>
-          <div><p className="font-semibold">Data</p><p className="text-zinc-500">Synthetic demonstration dataset</p></div>
-          <div><p className="font-semibold">Calculations</p><p className="text-zinc-500">Deterministic backend engines</p></div>
-          <div><p className="font-semibold">Scenarios</p><p className="text-zinc-500">Prototype estimates</p></div>
+      {/* ================= FINAL CTA ================= */}
+      <section className="relative overflow-hidden bg-[#0A0A0B] text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_60%_80%_at_50%_50%,black,transparent)]" />
+          <div className="absolute left-1/2 top-1/2 h-[26rem] w-[46rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F5B400] opacity-[0.05] blur-3xl" />
+          {PARTICLES.slice(0, 6).map((pt, i) => (
+            <span
+              key={i}
+              className="js-float absolute rounded-full bg-white/20"
+              style={{ left: pt.left, top: pt.top, width: pt.size, height: pt.size, animationDelay: pt.delay, animationDuration: pt.dur }}
+            />
+          ))}
+        </div>
+        <div className="relative mx-auto max-w-[1360px] px-5 py-20 text-center md:px-8 min-[1440px]:px-10 lg:py-[104px]">
+          <Reveal>
+            <p className="text-[11px] font-semibold tracking-[0.24em] text-zinc-500">JANSETU · FOR COMMUNITIES & DECISION-MAKERS</p>
+            <h2 className="mx-auto mt-5 max-w-3xl font-serif text-[clamp(1.9rem,4vw,3.2rem)] font-semibold leading-[1.1] tracking-tight">
+              Every community has a signal.
+              <br />
+              <span className="text-zinc-400">JanSetu helps decision-makers see it.</span>
+            </h2>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+              <Link
+                href="/citizen"
+                className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[15px] font-semibold text-black transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F5B400] hover:shadow-[0_12px_40px_rgba(245,180,0,0.35)]"
+              >
+                Report a Community Need
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+              <Link
+                href="/dashboard"
+                className="group inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-7 py-3.5 text-[15px] font-medium text-zinc-100 backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-white/40 hover:bg-white/[0.08]"
+              >
+                Explore Civic Intelligence
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" aria-hidden="true" />
+              </Link>
+            </div>
+            <p className="mt-8 text-xs tracking-wide text-zinc-600">
+              Synthetic demonstration dataset · Prototype estimates, not official statistics
+            </p>
+          </Reveal>
         </div>
       </section>
     </main>
