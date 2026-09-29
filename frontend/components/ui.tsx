@@ -33,6 +33,25 @@ export function StatusBadge({ tone, children }: { tone: "rising" | "stable" | "d
   return <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{children}</span>;
 }
 
+const TIER_STYLE: Record<string, string> = {
+  P0: "bg-[#C93636]/12 text-[#C93636] dark:bg-[#F87171]/15 dark:text-[#F87171]",
+  P1: "bg-[#F5B400]/15 text-[#8A5E00] dark:bg-[#F5B400]/15 dark:text-[#F5B400]",
+  P2: "bg-[#303A8C]/10 text-[#303A8C] dark:bg-[#7C7CFF]/15 dark:text-[#A5A5FF]",
+  P3: "bg-[var(--js-track)] text-[var(--js-muted)]",
+};
+
+/** Priority tier badge (P0–P3). Tiers mirror the backend hotspot engine thresholds. */
+export function TierBadge({ tier, score }: { tier: string; score?: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`inline-block rounded px-1.5 py-0.5 text-[11px] font-bold tracking-wide ${TIER_STYLE[tier] ?? TIER_STYLE.P3}`}>
+        {tier}
+      </span>
+      {score != null && <span className="text-xs tabular-nums text-[var(--js-muted)]">{score.toFixed(2)}</span>}
+    </span>
+  );
+}
+
 export function EmptyState({ title, body, actionLabel, onAction }: {
   title: string;
   body: string;

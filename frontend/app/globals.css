@@ -54,9 +54,10 @@
   /* JanSetu semantic theme tokens — single source of truth (§20) */
   --js-surface: #FFFFFF;
   --js-surface-2: #FFFFFF;
-  --js-muted: #69707D;
+  --js-muted: #69717D;
   --js-faint: #9AA1AD;
-  --js-accent: #F5B400;
+  --js-accent: #D99A00;
+  --js-accent-strong: #F5B400;
   --js-success: #138A52;
   --js-danger: #C93636;
   --js-track: #E8EBEF;
@@ -73,8 +74,8 @@
   --accent: #F1F3F5;
   --accent-foreground: #0B0D10;
   --destructive: #C93636;
-  --border: #DDE1E7;
-  --input: #DDE1E7;
+  --border: #DEE2E8;
+  --input: #DEE2E8;
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
@@ -100,17 +101,18 @@
 }
 
 .dark {
-  --background: #080A0D;
+  --background: #07090C;
   --foreground: #F4F5F7;
   /* JanSetu semantic theme tokens — dark overrides */
-  --js-surface: #101318;
-  --js-surface-2: #151922;
-  --js-muted: #969DA8;
+  --js-surface: #0D1015;
+  --js-surface-2: #12161D;
+  --js-muted: #8B929E;
   --js-faint: #6B7280;
   --js-accent: #F5B400;
+  --js-accent-strong: #F5B400;
   --js-success: #34D399;
   --js-danger: #F87171;
-  --js-track: #262C36;
+  --js-track: #242A33;
   --card: #101318;
   --card-foreground: #F4F5F7;
   --popover: #151922;
@@ -124,8 +126,8 @@
   --accent: #151922;
   --accent-foreground: #F4F5F7;
   --destructive: #F87171;
-  --border: #262C36;
-  --input: #262C36;
+  --border: #242A33;
+  --input: #242A33;
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);

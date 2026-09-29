@@ -24,48 +24,23 @@ export const metadata: Metadata = {
 function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-[var(--border)] bg-[var(--js-surface)] text-sm">
-      <div className="mx-auto max-w-[1360px] px-6 md:px-10 py-8">
-        <p className="font-bold tracking-widest">JANSETU</p>
-        <p className="mt-1 text-[var(--js-muted)]">AI Civic Intelligence for India</p>
-        <p className="mt-1 text-[var(--js-muted)]">Built to help communities turn lived experience into structured civic intelligence.</p>
-        <div className="mt-4 grid grid-cols-2 gap-6 sm:grid-cols-4">
-          <nav aria-label="Product">
-            <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">Product</p>
-            <ul className="mt-2 space-y-1">
-              <li><Link className="hover:underline" href="/citizen">Citizen Voice</Link></li>
-              <li><Link className="hover:underline" href="/dashboard">Civic Intelligence</Link></li>
-              <li><Link className="hover:underline" href="/hotspots">Hotspots</Link></li>
-              <li><Link className="hover:underline" href="/simulator">Simulator</Link></li>
-            </ul>
-          </nav>
-          <nav aria-label="Resources">
-            <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">Resources</p>
-            <ul className="mt-2 space-y-1">
-              <li><a className="hover:underline" href="https://github.com/mahitss/setu_gh/blob/master/docs/architecture.md">Architecture</a></li>
-              <li><a className="hover:underline" href="https://github.com/mahitss/setu_gh/blob/master/docs/demo-script.md">Demo</a></li>
-              <li><a className="hover:underline" href="https://github.com/mahitss/setu_gh">GitHub</a></li>
-            </ul>
-          </nav>
-          <nav aria-label="Account">
-            <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">Account</p>
-            <ul className="mt-2 space-y-1">
-              <li><Link className="hover:underline" href="/signin">Sign in</Link></li>
-              <li><Link className="hover:underline" href="/signup">Create account</Link></li>
-            </ul>
-          </nav>
+      <div className="mx-auto max-w-[1360px] px-6 md:px-10 py-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-wide text-[var(--js-muted)]">Technology</p>
-            <ul className="mt-2 space-y-1 text-[var(--js-muted)]">
-              <li>Google Gemini</li>
-              <li>Google Cloud</li>
-              <li>Deterministic backend engines</li>
-            </ul>
+            <p className="font-bold tracking-widest">JANSETU<span className="text-[var(--js-accent-strong)]">.</span></p>
+            <p className="mt-1 text-xs text-[var(--js-muted)]">AI Civic Intelligence for India</p>
           </div>
+          <nav aria-label="Product" className="flex flex-wrap gap-x-5 gap-y-1 text-[13px]">
+            <Link className="text-[var(--js-muted)] hover:underline" href="/citizen">Citizen Voice</Link>
+            <Link className="text-[var(--js-muted)] hover:underline" href="/dashboard">Civic Intelligence</Link>
+            <Link className="text-[var(--js-muted)] hover:underline" href="/hotspots">Hotspots</Link>
+            <Link className="text-[var(--js-muted)] hover:underline" href="/simulator">Simulator</Link>
+          </nav>
+          <p className="text-xs text-[var(--js-muted)]">Google Gemini · Google Cloud</p>
         </div>
-        <p className="mt-6 border-t border-[var(--border)] pt-4 text-xs text-[var(--js-muted)]">
-          Disclosure: Synthetic demonstration dataset. Values shown are prototype data and are not official statistics.
+        <p className="mt-5 border-t border-[var(--border)] pt-3 text-[11px] text-[var(--js-faint)]">
+          Synthetic demonstration dataset — prototype data, not official statistics. © JanSetu
         </p>
-        <p className="mt-2 text-xs text-[var(--js-faint)]">© JanSetu</p>
       </div>
     </footer>
   );
