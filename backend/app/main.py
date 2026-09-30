@@ -1,11 +1,13 @@
 import logging
+import os
 import time
 import uuid
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from .config import settings
-from .database import init_db
+from .database import SessionLocal, init_db
+from .models import CitizenSignal
 from .routers import health, signals, analytics, voice
 from .services.rate_limit import FixedWindowLimiter
 
@@ -19,6 +21,23 @@ citizen_limiter = FixedWindowLimiter(max_requests=120, window_seconds=60)
 @app.on_event("startup")
 def _startup():
     init_db()
+    # Deploy safety: a fresh database (e.g. new Cloud Run instance with an
+    # empty/ephemeral SQLite file) serves empty pages. Seed the synthetic
+    # demo dataset once when the signals table is empty. Disable with
+    # SEED_ON_BOOT=0 (e.g. when seeding a production database manually).
+    if os.getenv("SEED_ON_BOOT", "1") != "0":
+        db = SessionLocal()
+        try:
+            if db.query(CitizenSignal).count() == 0:
+                from .services.seed import seed
+                t = time.time()
+                stats = seed(db)
+                log.info("seeded demo dataset in %.1fs: %s", time.time() - t, stats)
+        except Exception:
+            log.exception("demo seed failed — serving whatever data exists")
+            db.rollback()
+        finally:
+            db.close()
 
 
 @app.middleware("http")
